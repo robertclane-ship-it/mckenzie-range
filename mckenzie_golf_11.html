@@ -1,0 +1,3509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1a3d2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Range">
+<title>Range</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; user-select:none; }
+
+  :root {
+    --fairway:#1a3d2e;
+    --fairway-deep:#0f2a1f;
+    --fairway-light:#2a5240;
+    --green:#4a7a5a;
+    --green-light:#8fb88f;
+    --sand:#e8dcc4;
+    --sand-deep:#d4c5a3;
+    --paper:#fafaf7;
+    --ink:#0a1410;
+    --ink-soft:#2a3530;
+    --ink-faint:#6a7570;
+    --flag:#f5c842;
+    --flag-deep:#d4a832;
+    --red:#c4452e;
+    --red-light:#e87a65;
+    --rule:rgba(0,0,0,0.08);
+    --shadow:0 2px 12px rgba(10,20,16,0.06);
+  }
+
+  html, body { height:100%; overflow:hidden; overscroll-behavior:none; background:var(--paper); }
+  body { font-family:'Bricolage Grotesque',-apple-system,sans-serif; color:var(--ink); line-height:1.4; font-feature-settings:'ss01','ss02'; }
+
+  .app { display:flex; flex-direction:column; height:100vh; height:100dvh; max-width:480px; margin:0 auto; background:var(--paper); position:relative; }
+
+  /* TOPBAR */
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:var(--fairway); color:var(--paper); padding-top:calc(16px + env(safe-area-inset-top)); }
+  .topbar-brand { font-weight:800; font-size:22px; letter-spacing:-0.02em; }
+  .topbar-brand span { color:var(--flag); }
+  .topbar-meta { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.05em; text-transform:uppercase; opacity:0.7; }
+
+  /* TABS */
+  .tabs { display:flex; background:var(--fairway); padding:0 8px 0; gap:2px; }
+  .tab { flex:1; background:none; border:none; color:rgba(255,255,255,0.5); font-family:'Bricolage Grotesque',sans-serif; font-weight:600; font-size:12px; padding:14px 4px; cursor:pointer; letter-spacing:0.02em; text-transform:uppercase; border-radius:8px 8px 0 0; transition:all 0.15s; }
+  .tab.active { color:var(--ink); background:var(--paper); }
+
+  main { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; background:var(--paper); }
+  .view { display:none; padding:20px; padding-bottom:60px; min-height:100%; }
+  .view.active { display:block; animation:viewIn 0.25s ease-out; }
+  @keyframes viewIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ROUND HEADER */
+  .round-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--rule); }
+  .round-course-input { flex:1; border:none; background:none; font-weight:700; font-size:18px; color:var(--ink); padding:4px 0; outline:none; width:100%; }
+  .round-course-input::placeholder { color:var(--ink-faint); font-style:italic; font-weight:500; }
+  .round-totals { display:flex; gap:12px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.05em; }
+  .round-totals span { color:var(--ink); font-weight:700; font-size:14px; }
+
+  /* HOLE NAV */
+  .hole-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:12px; }
+  .hole-nav-btn { width:44px; height:44px; border-radius:50%; background:var(--sand); border:none; font-size:20px; font-weight:700; color:var(--fairway); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform 0.1s; }
+  .hole-nav-btn:active { transform:scale(0.92); background:var(--sand-deep); }
+  .hole-nav-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .hole-display { flex:1; text-align:center; }
+  .hole-number { font-weight:800; font-size:56px; line-height:1; color:var(--fairway); letter-spacing:-0.04em; }
+  .hole-par { display:flex; justify-content:center; align-items:center; gap:8px; margin-top:6px; font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-faint); }
+  .par-selector { display:inline-flex; gap:4px; }
+  .par-btn { width:28px; height:28px; border-radius:14px; border:1px solid var(--rule); background:var(--paper); font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; color:var(--ink); cursor:pointer; }
+  .par-btn.active { background:var(--fairway); color:var(--paper); border-color:var(--fairway); }
+
+  /* ENTRY BLOCK */
+  .entry-block { margin-bottom:14px; background:var(--paper); border:1px solid var(--rule); border-radius:14px; padding:14px; }
+  .entry-block.compact { padding:12px 14px; }
+  .entry-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:var(--ink-faint); font-weight:700; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .entry-label-tag { color:var(--ink); font-weight:700; font-size:12px; text-transform:none; letter-spacing:0; }
+  .entry-label-tag.good { color:var(--green); }
+  .entry-label-tag.bad { color:var(--red); }
+
+  .btn-group { display:grid; gap:6px; }
+  .btn-group.cols-2 { grid-template-columns:1fr 1fr; }
+  .btn-group.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+  .btn-group.cols-4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+  .btn-group.cols-5 { grid-template-columns:repeat(5,1fr); }
+
+  .data-btn { background:var(--paper); border:1.5px solid var(--rule); padding:11px 4px; border-radius:10px; font-family:'Bricolage Grotesque',sans-serif; font-weight:600; font-size:12.5px; color:var(--ink-soft); cursor:pointer; transition:all 0.12s; min-height:44px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; }
+  .data-btn:active { transform:scale(0.96); }
+  .data-btn.active { background:var(--fairway); color:var(--paper); border-color:var(--fairway); }
+  .data-btn.active.good { background:var(--green); border-color:var(--green); }
+  .data-btn.active.bad { background:var(--red); border-color:var(--red); color:var(--paper); }
+  .data-btn.active.warn { background:var(--flag-deep); border-color:var(--flag-deep); color:var(--fairway-deep); }
+
+  /* PRACTICE LINK BTN */
+  .practice-link-btn {
+    background:var(--sand);
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--fairway);
+    cursor:pointer;
+    margin:4px 4px 0;
+    letter-spacing:0;
+    text-transform:none;
+  }
+  .practice-link-btn:active { background:var(--sand-deep); }
+
+  /* PRACTICE MODE HOLES */
+  .practice-hole {
+    padding:14px;
+    margin-bottom:10px;
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:10px;
+  }
+  .practice-hole-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; }
+  .practice-hole-num { display:flex; align-items:baseline; gap:8px; }
+  .practice-hole-big { font-weight:800; font-size:24px; color:var(--fairway); letter-spacing:-0.03em; line-height:1; }
+  .practice-hole-par { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.08em; }
+  .practice-hole-meta { display:flex; gap:8px; align-items:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); }
+  .practice-hole-hcp { color:var(--flag-deep); font-weight:700; }
+  .practice-edited { background:var(--flag); color:var(--fairway-deep); padding:2px 6px; border-radius:3px; font-weight:700; }
+  .practice-hole-strategy { font-size:13.5px; color:var(--ink-soft); line-height:1.55; -webkit-user-select:text; user-select:text; }
+
+  /* COURSE PICKER */
+  .course-picker { display:flex; flex-direction:column; gap:8px; max-width:340px; margin:0 auto; }
+  .course-pick-btn {
+    background:var(--paper);
+    border:1.5px solid var(--rule);
+    border-radius:14px;
+    padding:14px 18px;
+    text-align:left;
+    cursor:pointer;
+    font-family:'Bricolage Grotesque',sans-serif;
+    transition:all 0.15s;
+    box-shadow:var(--shadow);
+  }
+  .course-pick-btn:active { transform:scale(0.98); background:var(--sand); }
+  .course-pick-btn:hover { border-color:var(--fairway); }
+  .course-pick-btn.other { background:transparent; border-style:dashed; box-shadow:none; }
+  .course-pick-name { font-weight:700; font-size:16px; color:var(--fairway); margin-bottom:2px; letter-spacing:-0.01em; }
+  .course-pick-detail { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); letter-spacing:0.04em; text-transform:uppercase; }
+  .course-pick-btn.other .course-pick-name { color:var(--ink-soft); }
+
+  /* STRATEGY CARD */
+  .strategy-card {
+    background:linear-gradient(135deg, rgba(245,200,66,0.08) 0%, rgba(212,168,50,0.04) 100%);
+    border:1px solid rgba(212,168,50,0.3);
+    border-radius:12px;
+    padding:0;
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .strategy-card summary {
+    list-style:none;
+    cursor:pointer;
+    padding:12px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .strategy-card summary::-webkit-details-marker { display:none; }
+  .strategy-summary-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .strategy-tag {
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.15em;
+    color:var(--flag-deep);
+    font-weight:700;
+    background:rgba(212,168,50,0.15);
+    padding:3px 8px;
+    border-radius:4px;
+  }
+  .strategy-yards { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); letter-spacing:0.05em; }
+  .strategy-chevron { color:var(--flag-deep); font-size:14px; transition:transform 0.2s; }
+  .strategy-card[open] .strategy-chevron { transform:rotate(180deg); }
+  .strategy-body { padding:0 16px 14px; }
+  .strategy-text { font-size:14px; color:var(--ink-soft); line-height:1.55; margin-bottom:12px; padding-top:6px; border-top:1px solid rgba(212,168,50,0.25); padding-top:12px; -webkit-user-select:text; user-select:text; }
+  .strategy-edit-btn {
+    background:transparent;
+    border:1px solid var(--flag-deep);
+    color:var(--fairway);
+    padding:8px 14px;
+    border-radius:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    cursor:pointer;
+  }
+  .strategy-edit-btn:active { background:var(--flag); }
+
+  /* RUNNING TOTAL BANNER */
+  .running-total {
+    background:var(--fairway);
+    color:var(--paper);
+    border-radius:14px;
+    padding:16px 20px;
+    margin-bottom:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+  }
+  .running-total.under { background:linear-gradient(135deg, #8a4527 0%, #a85a35 100%); }
+  .running-total.over { background:linear-gradient(135deg, var(--fairway) 0%, var(--fairway-light) 100%); }
+  .running-total.even { background:linear-gradient(135deg, var(--fairway) 0%, var(--fairway-light) 100%); }
+  .running-total-main { display:flex; align-items:baseline; gap:12px; flex:1; }
+  .running-total-score { font-weight:800; font-size:42px; letter-spacing:-0.04em; line-height:1; color:var(--paper); }
+  .running-total-diff { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:18px; color:var(--flag); letter-spacing:0.02em; }
+  .running-total-thru { font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.12em; color:rgba(255,255,255,0.6); font-weight:600; text-align:right; }
+
+  /* SCORE BLOCK — refactored */
+  .score-block { background:var(--paper); color:var(--ink); padding:14px 18px; border-radius:14px; margin-bottom:14px; border:1px solid var(--rule); box-shadow:var(--shadow); }
+  .score-block-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .score-block-left { flex:1; }
+  .score-block-left .entry-label { color:var(--ink-faint); margin-bottom:6px; }
+  .score-number-row { display:flex; align-items:baseline; gap:14px; }
+  .score-number { font-weight:800; font-size:54px; line-height:1; letter-spacing:-0.04em; color:var(--fairway); min-width:auto; }
+  .score-vs-par-inline { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:var(--flag-deep); text-transform:uppercase; font-weight:700; }
+  .score-edit-btn { background:var(--sand); border:none; padding:8px 14px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; color:var(--fairway); cursor:pointer; text-transform:uppercase; letter-spacing:0.08em; }
+  .score-edit-btn.active { background:var(--fairway); color:var(--paper); }
+  .score-edit-btn:active { transform:scale(0.96); }
+  .score-override-row { display:flex; align-items:center; justify-content:center; gap:20px; margin-top:14px; padding-top:14px; border-top:1px dashed var(--rule); }
+  .score-btn-big { width:48px; height:48px; border-radius:24px; background:var(--sand); border:none; color:var(--fairway); font-size:24px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .score-btn-big:active { transform:scale(0.92); background:var(--sand-deep); }
+  .score-override-num { font-weight:800; font-size:44px; line-height:1; letter-spacing:-0.04em; color:var(--fairway); min-width:60px; text-align:center; }
+
+  /* RECOVERY SHOTS */
+  .recovery-item { background:rgba(232,220,196,0.3); border-radius:10px; padding:12px; margin-bottom:8px; }
+  .recovery-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .recovery-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-soft); font-weight:700; }
+  .recovery-remove { background:none; border:none; color:var(--red); font-size:22px; line-height:1; cursor:pointer; padding:0 6px; font-weight:300; }
+  .recovery-remove:active { color:#8a2818; }
+  .add-recovery-btn { width:100%; background:var(--sand); border:1.5px dashed var(--fairway); border-radius:10px; padding:12px; font-family:'Bricolage Grotesque',sans-serif; font-weight:600; font-size:13px; color:var(--fairway); cursor:pointer; text-transform:none; letter-spacing:0; margin-top:6px; }
+  .add-recovery-btn:active { background:var(--sand-deep); transform:scale(0.99); }
+
+  /* PUTT DETAIL */
+  .putt-detail { margin-top:10px; padding-top:10px; border-top:1px dashed var(--rule); }
+  .putt-misses { display:flex; gap:6px; flex-wrap:wrap; }
+  .putt-miss-btn { background:var(--paper); border:1.5px solid var(--rule); padding:8px 12px; border-radius:20px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; color:var(--ink-soft); cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; }
+  .putt-miss-btn.active { background:var(--red); color:var(--paper); border-color:var(--red); }
+
+  /* NOTES */
+  .notes-input { width:100%; background:var(--paper); border:1.5px solid var(--rule); border-radius:10px; padding:10px 12px; font-family:'Bricolage Grotesque',sans-serif; font-size:14px; color:var(--ink); resize:none; min-height:48px; outline:none; -webkit-user-select:text; user-select:text; }
+  .notes-input:focus { border-color:var(--fairway); }
+  .quick-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .quick-tag { background:var(--sand); border:none; padding:5px 10px; border-radius:14px; font-size:11px; font-weight:600; color:var(--fairway); cursor:pointer; font-family:'JetBrains Mono',monospace; letter-spacing:0.04em; text-transform:uppercase; }
+  .quick-tag:active { background:var(--sand-deep); }
+
+  /* FINISH */
+  .finish-btn { width:100%; background:var(--flag); border:none; padding:18px; border-radius:14px; font-weight:700; font-size:16px; color:var(--fairway-deep); cursor:pointer; text-transform:uppercase; letter-spacing:0.08em; margin-top:8px; }
+  .finish-btn:active { transform:scale(0.98); }
+
+  /* COLLAPSIBLE */
+  .collapsible-header { display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding:4px 0; }
+  .collapsible-toggle { width:24px; height:24px; border-radius:12px; background:var(--sand); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--fairway); font-weight:700; transition:transform 0.2s; }
+  .collapsible.expanded .collapsible-toggle { transform:rotate(180deg); }
+  .collapsible-body { display:none; padding-top:12px; }
+  .collapsible.expanded .collapsible-body { display:block; }
+
+  /* COURSE META */
+  .course-meta { background:var(--sand); border-radius:12px; padding:10px 14px; margin-bottom:16px; font-size:12px; }
+  .course-meta summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft); letter-spacing:0.05em; font-weight:500; }
+  .course-meta summary::-webkit-details-marker { display:none; }
+  .course-meta-edit { color:var(--flag-deep); font-weight:700; text-transform:uppercase; letter-spacing:0.1em; font-size:10px; }
+  .course-meta-body { margin-top:12px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.08); }
+  .course-meta-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .course-meta-row label { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; flex-shrink:0; width:90px; }
+  .course-meta-row input { flex:1; border:1px solid var(--rule); border-radius:6px; padding:8px 10px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ink); background:var(--paper); outline:none; -webkit-user-select:text; user-select:text; }
+  .course-meta-row input:focus { border-color:var(--fairway); }
+  .course-meta-hint { font-size:11px; color:var(--ink-faint); margin-top:8px; font-style:italic; line-height:1.4; }
+
+  /* HANDICAP CARD */
+  .handicap-card { background:linear-gradient(135deg, var(--fairway) 0%, var(--fairway-light) 100%); color:var(--paper); padding:24px; border-radius:18px; margin-bottom:20px; position:relative; overflow:hidden; }
+  .handicap-card::before { content:''; position:absolute; top:-40px; right:-40px; width:140px; height:140px; border-radius:50%; background:rgba(245,200,66,0.1); }
+  .handicap-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; color:rgba(255,255,255,0.6); font-weight:700; margin-bottom:10px; position:relative; }
+  .handicap-value { font-weight:800; font-size:64px; line-height:1; color:var(--flag); letter-spacing:-0.04em; position:relative; }
+  .handicap-value-pending { font-weight:600; font-size:20px; color:rgba(255,255,255,0.7); position:relative; line-height:1.3; }
+  .handicap-detail { font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(255,255,255,0.65); margin-top:8px; letter-spacing:0.04em; position:relative; }
+  .handicap-meta { display:flex; justify-content:space-between; align-items:baseline; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.15); position:relative; }
+  .handicap-meta-item { text-align:center; flex:1; }
+  .handicap-meta-label { font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.12em; color:rgba(255,255,255,0.5); font-weight:600; margin-bottom:4px; }
+  .handicap-meta-value { font-weight:700; font-size:16px; color:var(--paper); }
+
+  /* COACH VIEW */
+  .coach-empty-icon { font-size:48px; margin-bottom:12px; }
+  .coach-empty { text-align:center; padding:50px 30px; }
+  .coach-empty-title { font-weight:800; font-size:22px; color:var(--fairway); margin-bottom:8px; letter-spacing:-0.02em; }
+  .coach-empty-sub { font-size:14px; color:var(--ink-faint); line-height:1.55; max-width:280px; margin:0 auto; }
+
+  .coach-intro { background:var(--fairway); color:var(--paper); padding:20px; border-radius:14px; margin-bottom:18px; }
+  .coach-intro-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:var(--flag); font-weight:700; margin-bottom:8px; }
+  .coach-intro-text { font-size:15px; line-height:1.5; color:rgba(255,255,255,0.9); }
+  .coach-intro-text strong { color:var(--paper); font-weight:700; }
+
+  .insight { background:var(--paper); border:1px solid var(--rule); border-radius:14px; padding:18px; margin-bottom:14px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .insight-priority { position:absolute; top:0; left:0; height:100%; width:4px; background:var(--green); }
+  .insight-priority.med { background:var(--flag-deep); }
+  .insight-priority.high { background:var(--red); }
+
+  .insight-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .insight-area { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; color:var(--ink-faint); font-weight:700; }
+  .insight-rank { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--flag-deep); font-weight:700; letter-spacing:0.1em; }
+  .insight-title { font-weight:800; font-size:18px; color:var(--fairway); margin-bottom:10px; letter-spacing:-0.01em; line-height:1.25; }
+  .insight-finding { font-size:14px; color:var(--ink-soft); line-height:1.55; margin-bottom:14px; }
+  .insight-rx { background:var(--sand); border-radius:8px; padding:12px 14px; }
+  .insight-rx-label { font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.12em; color:var(--flag-deep); font-weight:700; margin-bottom:6px; }
+  .insight-rx-text { font-size:13.5px; color:var(--ink-soft); line-height:1.5; }
+  .insight-rx-text strong { color:var(--ink); font-weight:700; }
+
+  .coach-footer { background:var(--sand); border-radius:12px; padding:14px 18px; margin-top:14px; font-size:13px; color:var(--ink-soft); line-height:1.5; font-style:italic; }
+
+  /* STATS */
+  .stats-header { margin-bottom:24px; }
+  .stats-title { font-weight:800; font-size:28px; color:var(--fairway); letter-spacing:-0.02em; margin-bottom:6px; }
+  .stats-sub { font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-faint); }
+
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .stat-card { background:var(--sand); border-radius:14px; padding:14px; }
+  .stat-card.featured { grid-column:span 2; background:var(--fairway); color:var(--paper); padding:18px; }
+  .stat-label { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-faint); font-weight:700; margin-bottom:8px; }
+  .stat-card.featured .stat-label { color:rgba(255,255,255,0.6); }
+  .stat-value { font-weight:800; font-size:32px; line-height:1; color:var(--fairway); letter-spacing:-0.03em; }
+  .stat-card.featured .stat-value { color:var(--flag); font-size:48px; }
+  .stat-detail { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); margin-top:6px; }
+  .stat-card.featured .stat-detail { color:rgba(255,255,255,0.7); }
+
+  /* VIZ */
+  .viz-section { background:var(--paper); border:1px solid var(--rule); border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .viz-title { font-weight:700; font-size:15px; color:var(--fairway); margin-bottom:4px; }
+  .viz-sub { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-faint); margin-bottom:14px; }
+
+  /* MISS WHEEL */
+  .wheel-wrap { display:flex; gap:14px; align-items:center; }
+  .wheel-svg { width:140px; height:140px; flex-shrink:0; }
+  .wheel-legend { flex:1; }
+  .wheel-row { display:flex; justify-content:space-between; padding:5px 0; font-size:12px; font-family:'JetBrains Mono',monospace; letter-spacing:0.03em; }
+  .wheel-row span:first-child { color:var(--ink-faint); text-transform:uppercase; }
+  .wheel-row span:last-child { color:var(--ink); font-weight:700; }
+
+  /* SG-style breakdown */
+  .sg-row { display:flex; align-items:center; gap:10px; padding:8px 0; }
+  .sg-label { font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-faint); width:80px; flex-shrink:0; }
+  .sg-bar-wrap { flex:1; height:24px; background:var(--sand); border-radius:6px; overflow:hidden; position:relative; }
+  .sg-bar { height:100%; background:var(--fairway); border-radius:6px; transition:width 0.5s ease-out; }
+  .sg-bar.warn { background:var(--flag-deep); }
+  .sg-bar.bad { background:var(--red); }
+  .sg-value { width:50px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:var(--ink); }
+
+  /* TREND CHART */
+  .trend-chart { width:100%; height:100px; }
+
+  /* ROUND ITEM */
+  .round-item { background:var(--paper); border:1px solid var(--rule); border-radius:12px; padding:14px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+  .round-info-block { flex:1; }
+  .round-course { font-weight:700; font-size:15px; color:var(--ink); }
+  .round-date { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); margin-top:2px; letter-spacing:0.03em; }
+  .round-score { text-align:right; }
+  .round-score-num { font-weight:800; font-size:24px; color:var(--fairway); line-height:1; }
+  .round-score-par { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.08em; margin-top:2px; }
+  .round-score-par.under { color:var(--red); }
+  .round-score-par.over { color:var(--ink-faint); }
+
+  /* EMPTY */
+  .empty { text-align:center; padding:60px 30px; color:var(--ink-faint); }
+  .empty-icon { font-size:48px; margin-bottom:16px; opacity:0.4; }
+  .empty-title { font-weight:700; font-size:18px; color:var(--ink); margin-bottom:8px; }
+  .empty-sub { font-size:14px; line-height:1.5; }
+
+  /* WELCOME */
+  .welcome { text-align:center; padding:40px 20px 20px; }
+  .welcome-name { font-weight:800; font-size:36px; color:var(--fairway); letter-spacing:-0.03em; margin-bottom:8px; }
+  .welcome-tagline { font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:var(--flag-deep); margin-bottom:24px; font-weight:700; }
+  .start-round-btn { background:var(--fairway); color:var(--paper); border:none; padding:18px 32px; border-radius:14px; font-weight:700; font-size:16px; cursor:pointer; text-transform:uppercase; letter-spacing:0.08em; width:100%; max-width:280px; margin:0 auto; display:block; }
+  .start-round-btn:active { transform:scale(0.98); }
+
+  /* MODAL */
+  .modal-backdrop { position:fixed; inset:0; background:rgba(10,20,16,0.7); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .modal-backdrop.show { display:flex; animation:fadeIn 0.2s; }
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+  .modal { background:var(--paper); border-radius:20px; padding:24px; max-width:380px; width:100%; max-height:85vh; overflow-y:auto; -webkit-overflow-scrolling:touch; -webkit-user-select:text; user-select:text; }
+  .modal-title { font-weight:800; font-size:22px; color:var(--fairway); margin-bottom:8px; letter-spacing:-0.02em; }
+  .modal-text { font-size:14.5px; color:var(--ink-soft); line-height:1.5; margin-bottom:18px; }
+  .modal-actions { display:flex; gap:10px; }
+  .modal-btn { flex:1; padding:13px; border-radius:12px; border:none; font-weight:700; font-size:13px; cursor:pointer; text-transform:uppercase; letter-spacing:0.04em; font-family:'Bricolage Grotesque',sans-serif; }
+  .modal-btn.primary { background:var(--fairway); color:var(--paper); }
+  .modal-btn.secondary { background:var(--sand); color:var(--fairway); }
+  .modal-btn.danger { background:var(--red); color:var(--paper); }
+
+  /* DETAIL */
+  .detail-stat { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--rule); font-size:14px; }
+  .detail-stat:last-child { border-bottom:none; }
+  .detail-label { color:var(--ink-faint); font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; }
+  .detail-value { font-weight:700; color:var(--ink); }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--fairway); color:var(--paper); padding:12px 20px; border-radius:24px; font-size:13px; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,0.2); z-index:200; transition:transform 0.3s ease-out; opacity:0; pointer-events:none; }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+  /* EXPORT BUTTON */
+  .export-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+  .export-btn { background:var(--sand); border:1px solid var(--rule); padding:14px; border-radius:12px; font-weight:600; font-size:13px; color:var(--fairway); cursor:pointer; text-transform:uppercase; letter-spacing:0.04em; font-family:'Bricolage Grotesque',sans-serif; }
+  .export-btn:active { background:var(--sand-deep); }
+  .export-btn.primary { background:var(--fairway); color:var(--paper); border-color:var(--fairway); }
+  .export-btn.primary:active { background:var(--fairway-deep); }
+  .export-btn.full { width:100%; }
+
+  /* DEMO/RESET BUTTONS */
+  .demo-btn {
+    background:var(--sand);
+    color:var(--fairway);
+    border:1px dashed var(--flag-deep);
+    padding:12px 22px;
+    border-radius:10px;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+  .demo-btn:active { background:var(--sand-deep); }
+
+  .clear-btn {
+    background:transparent;
+    color:var(--red);
+    border:1px solid var(--red);
+    padding:10px 20px;
+    border-radius:10px;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    cursor:pointer;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+  .clear-btn:active { background:var(--red); color:white; }
+
+  /* PER-HOLE DRIVE GAP */
+  .hole-drive-gap {
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed rgba(0,0,0,0.08);
+  }
+  .hole-drive-label {
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--ink-faint);
+    margin-bottom:8px;
+    font-weight:700;
+  }
+  .hole-drive-grid {
+    display:grid;
+    grid-template-columns:repeat(6, 1fr);
+    gap:4px;
+  }
+  .hole-drive-btn {
+    background:var(--paper);
+    border:1.5px solid var(--rule);
+    padding:9px 4px;
+    border-radius:8px;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:700;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all 0.12s;
+    letter-spacing:-0.01em;
+  }
+  .hole-drive-btn:active { transform:scale(0.94); }
+  .hole-drive-btn.behind.active { background:var(--red); border-color:var(--red); color:var(--paper); }
+  .hole-drive-btn.even.active { background:var(--ink-soft); border-color:var(--ink-soft); color:var(--paper); }
+  .hole-drive-btn.ahead.active { background:var(--fairway); border-color:var(--fairway); color:var(--paper); }
+  .hole-drive-exact { margin-top:10px; }
+  .hole-drive-exact summary {
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-faint);
+    font-weight:700;
+  }
+  .hole-drive-exact summary::-webkit-details-marker { display:none; }
+  .hole-drive-exact[open] .strategy-chevron { transform:rotate(180deg); }
+
+  /* DRIVING STATS CARD */
+  .stat-card.drive-behind { background:linear-gradient(135deg, rgba(196,69,46,0.06) 0%, rgba(196,69,46,0.02) 100%); border-color:rgba(196,69,46,0.2); }
+  .stat-card.drive-behind .stat-value { color:var(--red); }
+  .stat-card.drive-ahead { background:linear-gradient(135deg, rgba(26,61,46,0.06) 0%, rgba(26,61,46,0.02) 100%); border-color:rgba(26,61,46,0.2); }
+  .stat-card.drive-ahead .stat-value { color:var(--fairway); }
+
+  .driving-card {
+    background:linear-gradient(135deg, rgba(26,61,46,0.04) 0%, rgba(26,61,46,0.01) 100%);
+    border:1px solid var(--rule);
+    border-radius:14px;
+    padding:16px;
+    margin:18px 0 12px;
+  }
+  .driving-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; }
+  .driving-card-tag {
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--fairway);
+    font-weight:700;
+  }
+  .driving-card-hint { font-size:11px; color:var(--ink-faint); font-style:italic; }
+  .driving-card-label-main { font-size:13px; color:var(--ink-soft); margin-bottom:10px; font-weight:600; }
+  .drive-delta-grid {
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .drive-delta-btn {
+    background:var(--paper);
+    border:1.5px solid var(--rule);
+    padding:12px 6px;
+    border-radius:10px;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all 0.12s;
+    letter-spacing:-0.01em;
+  }
+  .drive-delta-btn:active { transform:scale(0.96); }
+  .drive-delta-btn.behind.active { background:var(--red); border-color:var(--red); color:var(--paper); }
+  .drive-delta-btn.even.active { background:var(--ink-soft); border-color:var(--ink-soft); color:var(--paper); }
+  .drive-delta-btn.ahead.active { background:var(--fairway); border-color:var(--fairway); color:var(--paper); }
+  .drive-delta-hint { font-size:11px; color:var(--ink-faint); font-style:italic; line-height:1.4; margin-bottom:12px; }
+
+  .drive-exact-toggle {
+    border-top:1px dashed var(--rule);
+    padding-top:10px;
+    margin-top:4px;
+  }
+  .drive-exact-toggle summary {
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-faint);
+    font-weight:700;
+    padding:4px 0;
+  }
+  .drive-exact-toggle summary::-webkit-details-marker { display:none; }
+  .drive-exact-chevron { transition:transform 0.2s; }
+  .drive-exact-toggle[open] .drive-exact-chevron { transform:rotate(180deg); }
+  .drive-exact-body { padding-top:10px; }
+
+  .driving-card-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:10px; }
+  .driving-card-label { font-size:13px; color:var(--ink-soft); flex:1; }
+  .driving-input-wrap { display:flex; align-items:center; background:var(--paper); border:1.5px solid var(--rule); border-radius:8px; overflow:hidden; }
+  .driving-input { border:none; outline:none; padding:8px 6px 8px 12px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; width:70px; text-align:right; color:var(--fairway); background:transparent; -moz-appearance:textfield; }
+  .driving-input::-webkit-outer-spin-button,
+  .driving-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .driving-unit { padding:0 10px 0 4px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); }
+  .driving-text-input { flex:1; padding:8px 12px; border:1.5px solid var(--rule); border-radius:8px; font-family:'Bricolage Grotesque',sans-serif; font-size:13px; color:var(--ink); background:var(--paper); outline:none; }
+  .drive-computed-delta { font-size:12px; color:var(--ink-soft); padding:8px 12px; background:rgba(26,61,46,0.06); border-radius:8px; margin-top:6px; }
+
+  /* DETAILED PUTT TRACKING */
+  .putt-section-label {
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--ink-faint);
+    margin-bottom:8px;
+    font-weight:700;
+  }
+  .putt-miss-row {
+    margin-bottom:10px;
+    padding:10px;
+    background:rgba(232,220,196,0.3);
+    border-radius:8px;
+  }
+  .putt-miss-row:last-child { margin-bottom:0; }
+  .putt-miss-label {
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--ink-soft);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .putt-miss-options {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .putt-detail-btn {
+    background:var(--paper);
+    border:1.5px solid var(--rule);
+    padding:7px 10px;
+    border-radius:8px;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:600;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:all 0.12s;
+    letter-spacing:0;
+  }
+  .putt-detail-btn:active { transform:scale(0.96); }
+  .putt-detail-btn.active { background:var(--fairway); color:var(--paper); border-color:var(--fairway); }
+  .putt-detail-btn.active.warn { background:var(--flag-deep); color:var(--fairway-deep); border-color:var(--flag-deep); }
+  .putt-detail-btn.active.bad { background:var(--red); color:var(--paper); border-color:var(--red); }
+  .putt-pattern {
+    margin-top:10px;
+    padding:10px 12px;
+    background:rgba(196,69,46,0.08);
+    border-left:3px solid var(--red);
+    border-radius:0 8px 8px 0;
+    font-size:12.5px;
+    color:#5a2010;
+    line-height:1.45;
+    font-weight:600;
+  }
+
+  /* BUNKER TOGGLE */
+  .bunker-toggle {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:10px;
+    padding:10px 12px;
+    background:rgba(245,200,66,0.12);
+    border:1px solid rgba(212,168,50,0.3);
+    border-radius:10px;
+    cursor:pointer;
+    transition:background 0.15s;
+  }
+  .bunker-toggle:active { background:rgba(245,200,66,0.22); }
+  .bunker-toggle-check {
+    width:22px;
+    height:22px;
+    border-radius:6px;
+    border:1.5px solid var(--flag-deep);
+    background:var(--paper);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    color:var(--fairway-deep);
+    font-weight:700;
+    font-size:13px;
+    transition:all 0.15s;
+  }
+  .bunker-toggle-check.on {
+    background:var(--flag-deep);
+    color:var(--paper);
+    border-color:var(--flag-deep);
+  }
+  .bunker-toggle-label {
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    color:var(--fairway);
+  }
+
+  /* SEND TO DAD */
+  .send-to-dad {
+    background:linear-gradient(135deg, #faf4e4 0%, #f5e8c8 100%);
+    border:1px solid var(--sand-deep);
+  }
+  .send-to-dad .viz-title { color:var(--fairway); }
+  .send-to-dad textarea {
+    background:rgba(255,255,255,0.7);
+    border:1px solid var(--sand-deep);
+  }
+
+  /* BACKUP URGENT */
+  .backup-section.urgent { background:#fff5f0; border-color:#e8a890; }
+  .backup-section.urgent .viz-title { color:#8a2818; }
+
+  /* BACKUP CARD ON PLAY VIEW */
+  .backup-nudge { background:#fff5f0; border:1px solid #e8a890; border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .backup-nudge-text { font-size:12.5px; color:#5a2010; font-weight:600; line-height:1.3; flex:1; }
+  .backup-nudge-btn { background:#8a2818; color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; flex-shrink:0; font-family:'Bricolage Grotesque',sans-serif; }
+  .backup-nudge-btn:active { background:#6a1808; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="topbar-brand">RANGE<span>.</span></div>
+    <div class="topbar-meta">McKenzie</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="play">Play</button>
+    <button class="tab" data-view="stats">Stats</button>
+    <button class="tab" data-view="coach">Coach</button>
+    <button class="tab" data-view="rounds">Rounds</button>
+  </div>
+
+  <main>
+    <div class="view active" id="view-play"></div>
+    <div class="view" id="view-stats"></div>
+    <div class="view" id="view-coach"></div>
+    <div class="view" id="view-rounds"></div>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-text" id="modal-text"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE & STORAGE
+// ============================================================
+
+const STORAGE_KEY_ACTIVE = 'range:active-round';
+const STORAGE_KEY_HISTORY = 'range:rounds';
+const STORAGE_KEY_BACKUP = 'range:last-backup';
+
+let activeRound = null;
+let currentHole = 1;
+let history = [];
+let lastBackup = null;  // { date, roundCount } or null
+
+function newRound(courseId = null) {
+  const course = courseId ? COURSE_LIBRARY[courseId] : null;
+  const teeData = course ? course.tees[0] : null;
+  const round = {
+    id: 'r_' + Date.now(),
+    course: course ? course.name : '',
+    courseId: courseId,
+    date: new Date().toISOString(),
+    courseRating: teeData ? teeData.rating : 72.0,
+    slope: teeData ? teeData.slope : 113,
+    tees: teeData ? teeData.name : '',
+    holes: Array.from({ length: 18 }, (_, i) => {
+      const libHole = course ? course.holes.find(h => h.num === i + 1) : null;
+      return {
+        hole: i + 1,
+        par: libHole ? libHole.par : 4,
+        score: null,
+        scoreOverride: false,
+        tee: null,
+        teeBunker: false,
+        secondShot: null,
+        secondBunker: false,
+        approach: null,
+        approachBunker: false,
+        recoveries: [],
+        chip: null,
+        fromSand: false,
+        putts: null,
+        puttMisses: [],
+        puttDetails: [],
+        firstPuttDistance: null,
+        driveDelta: null,        // per-hole: estimated yards behind (-) or ahead (+) of peers off the tee
+        driveYds: null,          // optional: actual drive yardage
+        peerDriveYds: null,      // optional: peers' drive yardage on this hole
+        penalties: 0,
+        notes: ''
+      };
+    }),
+    finalNotes: '',
+    completed: false,
+    drivePartner: ''     // who she played with (round-level context for drive deltas)
+  };
+  return round;
+}
+
+// Storage backend detection.
+// window.storage exists ONLY inside Claude's artifact preview. Real Safari, PWAs,
+// and standalone deploys must use localStorage so the same bucket is used every time.
+// To prevent the cross-context data invisibility bug we hit on May 30, we lock to
+// localStorage on any host that isn't claude.ai/anthropic.com.
+const STORAGE_BACKEND = (() => {
+  try {
+    const host = (typeof location !== 'undefined' && location.hostname) ? location.hostname : '';
+    const inClaudePreview = host.endsWith('claude.ai') || host.endsWith('anthropic.com') || host.endsWith('claudeusercontent.com');
+    if (inClaudePreview && typeof window !== 'undefined' && window.storage) return 'claude';
+    return 'local';
+  } catch(e) { return 'local'; }
+})();
+
+async function storageGet(key) {
+  if (STORAGE_BACKEND === 'claude') {
+    try {
+      const r = await window.storage.get(key);
+      return r ? r.value : null;
+    } catch(e) { /* fall through */ }
+  }
+  try { return localStorage.getItem(key); } catch(e) { return null; }
+}
+
+async function storageSet(key, value) {
+  if (STORAGE_BACKEND === 'claude') {
+    try {
+      await window.storage.set(key, value);
+      return;
+    } catch(e) { /* fall through */ }
+  }
+  try { localStorage.setItem(key, value); } catch(e) {}
+}
+
+async function storageDelete(key) {
+  if (STORAGE_BACKEND === 'claude') {
+    try {
+      await window.storage.delete(key);
+      return;
+    } catch(e) { /* fall through */ }
+  }
+  try { localStorage.removeItem(key); } catch(e) {}
+}
+
+// ============================================================
+// BACKUP TRACKING
+// ============================================================
+
+async function markBackedUp() {
+  lastBackup = {
+    date: new Date().toISOString(),
+    roundCount: history.filter(r => r.completed).length
+  };
+  await storageSet(STORAGE_KEY_BACKUP, JSON.stringify(lastBackup));
+}
+
+function backupStatus() {
+  const completedCount = history.filter(r => r.completed).length;
+  if (completedCount === 0) return { state: 'none', text: '' };
+  if (!lastBackup) {
+    return {
+      state: 'never',
+      text: `Never backed up · ${completedCount} round${completedCount === 1 ? '' : 's'} at risk`,
+      urgent: completedCount >= 3
+    };
+  }
+  const daysSince = Math.floor((Date.now() - new Date(lastBackup.date).getTime()) / (1000 * 60 * 60 * 24));
+  const newRounds = completedCount - lastBackup.roundCount;
+  if (newRounds === 0 && daysSince < 30) {
+    return { state: 'fresh', text: `Backed up ${daysSince === 0 ? 'today' : daysSince + ' day' + (daysSince === 1 ? '' : 's') + ' ago'} · all rounds saved` };
+  }
+  if (newRounds > 0) {
+    return {
+      state: 'stale',
+      text: `${newRounds} new round${newRounds === 1 ? '' : 's'} since last backup`,
+      urgent: newRounds >= 5 || daysSince >= 30
+    };
+  }
+  return { state: 'old', text: `Last backup ${daysSince} days ago`, urgent: daysSince >= 30 };
+}
+
+async function loadState() {
+  const a = await storageGet(STORAGE_KEY_ACTIVE);
+  if (a) try { activeRound = JSON.parse(a); } catch(e) {}
+  const h = await storageGet(STORAGE_KEY_HISTORY);
+  if (h) try { history = JSON.parse(h); } catch(e) {}
+  const b = await storageGet(STORAGE_KEY_BACKUP);
+  if (b) try { lastBackup = JSON.parse(b); } catch(e) {}
+}
+
+let saveTimer = null;
+function debouncedSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (activeRound) storageSet(STORAGE_KEY_ACTIVE, JSON.stringify(activeRound));
+  }, 300);
+}
+
+async function saveHistory() {
+  await storageSet(STORAGE_KEY_HISTORY, JSON.stringify(history));
+}
+
+// ============================================================
+// CALCULATIONS
+// ============================================================
+
+// Compute a hole's score from logged shots if no manual override
+function computeHoleScore(h) {
+  if (h.scoreOverride && h.score !== null && h.score !== undefined) return h.score;
+
+  let shots = 0;
+  if (h.par === 3) {
+    // Par 3: tee shot lands on or off the green
+    if (h.approach !== null) shots += 1;
+  } else if (h.par === 5) {
+    // Par 5: tee + second + approach (if needed)
+    if (h.tee !== null) shots += 1;
+    if (h.secondShot !== null) shots += 1;
+    // Approach only counts if second shot didn't reach the green
+    if (h.secondShot !== 'green' && h.approach !== null) shots += 1;
+  } else {
+    // Par 4: tee + approach
+    if (h.tee !== null) shots += 1;
+    if (h.approach !== null) shots += 1;
+  }
+
+  if (h.recoveries && h.recoveries.length > 0) {
+    shots += h.recoveries.length;
+  } else if (h.chip !== null) {
+    shots += 1;
+  }
+
+  if (h.putts !== null && h.putts !== undefined) shots += h.putts;
+  shots += (h.penalties || 0);
+  return shots;
+}
+
+function holeScore(h) {
+  if (h.scoreOverride && h.score !== null && h.score !== undefined) return h.score;
+  const computed = computeHoleScore(h);
+  // For backwards compat: if computed is 0 and there's a legacy score, use it
+  if (computed === 0 && h.score) return h.score;
+  return computed;
+}
+
+function holeIsLogged(h) {
+  return h.tee !== null || h.secondShot !== null || h.approach !== null || (h.recoveries && h.recoveries.length > 0) || h.chip !== null || (h.putts !== null && h.putts !== undefined) || h.scoreOverride;
+}
+
+function totalScore(r) { return r.holes.reduce((s,h) => s + (holeIsLogged(h) ? holeScore(h) : 0), 0); }
+function totalPar(r) { return r.holes.reduce((s,h) => s + (holeIsLogged(h) ? (h.par||0) : 0), 0); }
+function relativeToPar(r) {
+  const d = totalScore(r) - totalPar(r);
+  return d === 0 ? 'E' : d > 0 ? '+' + d : '' + d;
+}
+function holesPlayed(r) {
+  return r.holes.filter(holeIsLogged).length;
+}
+
+function aggregateStats(rounds) {
+  const completed = rounds.filter(r => r.completed);
+  if (!completed.length) return null;
+
+  let scoreSum = 0, parSum = 0;
+  let fairwaysHit = 0, fairwaysAttempted = 0;
+  let girs = 0, girAttempts = 0;
+  let totalPutts = 0, holesForPutts = 0;
+  let scrambleSuccess = 0, scrambleAttempts = 0;
+  let penaltyTotal = 0;
+  let teeMisses = { left: 0, right: 0, wayLeft: 0, wayRight: 0, penalty: 0 };
+  let approachMisses = { short: 0, long: 0, left: 0, right: 0, chunked: 0, thinned: 0 };
+  let puttMissCounts = { left: 0, right: 0, short: 0, long: 0, lipped: 0 };
+  // Detailed putt tracking (new schema)
+  let puttDetailCounts = { 'pace-long': 0, 'pace-short': 0, 'line-left': 0, 'line-right': 0, lipped: 0, mishit: 0 };
+  let paceErrors = 0, lineErrors = 0;
+  let overcorrections = 0; // long-then-short or short-then-long in same hole
+  let firstPuttDistanceCounts = { short: 0, mid: 0, long: 0 };
+  let fairwayBunkers = 0, greensideBunkers = 0;
+  let sandSaveSuccess = 0, sandSaveAttempts = 0;
+  // Driving distance gap tracking
+  let driveDeltas = [];      // [{date, delta, partner}, ...]
+  let avgDriveYdsArr = [];   // her own avg drive when logged
+
+  completed.forEach(r => {
+    scoreSum += totalScore(r);
+    parSum += totalPar(r);
+    // Drive delta tracking — per-hole now. Aggregate to round-level for display.
+    const holeDeltasInRound = [];
+    r.holes.forEach(h => {
+      let d = null;
+      if (h.driveDelta !== null && h.driveDelta !== undefined) {
+        d = h.driveDelta;
+      } else if (h.driveYds && h.peerDriveYds) {
+        d = h.driveYds - h.peerDriveYds;
+      }
+      if (d !== null) holeDeltasInRound.push(d);
+      if (h.driveYds) avgDriveYdsArr.push(h.driveYds);
+    });
+    if (holeDeltasInRound.length > 0) {
+      const avgDelta = holeDeltasInRound.reduce((s,v)=>s+v,0) / holeDeltasInRound.length;
+      driveDeltas.push({
+        date: r.dateCompleted || r.date,
+        delta: Math.round(avgDelta),
+        holeCount: holeDeltasInRound.length,
+        partner: r.drivePartner || ''
+      });
+    }
+    r.holes.forEach(h => {
+      // Tee shot — count for par 4 and 5
+      if (h.par !== 3 && h.tee !== null) {
+        fairwaysAttempted++;
+        if (h.tee === 'fairway') fairwaysHit++;
+        else if (teeMisses[h.tee] !== undefined) teeMisses[h.tee]++;
+      }
+      if (h.teeBunker) fairwayBunkers++;
+      if (h.secondBunker) fairwayBunkers++;
+      // Approach: on par 5, prefer the "green-in-2" signal as a GIR equivalent
+      let effectiveApproach = h.approach;
+      if (h.par === 5 && h.secondShot === 'green') effectiveApproach = 'gir';
+      if (effectiveApproach !== null && effectiveApproach !== 'na') {
+        girAttempts++;
+        if (effectiveApproach === 'gir') girs++;
+        else if (approachMisses[effectiveApproach] !== undefined) approachMisses[effectiveApproach]++;
+      }
+      if (h.approachBunker) {
+        greensideBunkers++;
+        // Sand save = bunker shot leads to either holed-out or onto green inside 6ft + 1-putt for par
+        const firstRec = (h.recoveries && h.recoveries[0]) || null;
+        const recOrChip = firstRec ? firstRec.result : h.chip;
+        if (recOrChip) {
+          sandSaveAttempts++;
+          if (recOrChip === 'holed' || (recOrChip === 'good' && h.putts === 1)) sandSaveSuccess++;
+        }
+      }
+      if (h.putts !== null && h.putts !== undefined) {
+        totalPutts += h.putts;
+        holesForPutts++;
+      }
+      // Scrambling = saving par from off the green
+      // New schema: any recovery that lands close + 1-putt, OR holed-out recovery
+      if (h.approach && h.approach !== 'gir' && h.approach !== 'na') {
+        const firstRec = (h.recoveries && h.recoveries[0]) || null;
+        const recResult = firstRec ? firstRec.result : h.chip;
+        if (recResult) {
+          scrambleAttempts++;
+          const finalHoleScore = holeScore(h);
+          // Save = scored par or better despite missing the green
+          if (finalHoleScore <= h.par) scrambleSuccess++;
+        }
+      }
+      penaltyTotal += (h.penalties || 0);
+      (h.puttMisses || []).forEach(m => { if (puttMissCounts[m] !== undefined) puttMissCounts[m]++; });
+
+      // New detailed putt tracking
+      if (h.firstPuttDistance && firstPuttDistanceCounts[h.firstPuttDistance] !== undefined) {
+        firstPuttDistanceCounts[h.firstPuttDistance]++;
+      }
+      const details = (h.puttDetails || []).filter(d => d);
+      details.forEach(d => {
+        if (puttDetailCounts[d.type] !== undefined) puttDetailCounts[d.type]++;
+        if (d.type === 'pace-long' || d.type === 'pace-short') paceErrors++;
+        if (d.type === 'line-left' || d.type === 'line-right') lineErrors++;
+      });
+      // Detect overcorrection within a hole (long then short, or short then long)
+      if (details.length >= 2) {
+        const types = details.map(d => d.type);
+        if ((types[0] === 'pace-long' && types[1] === 'pace-short') ||
+            (types[0] === 'pace-short' && types[1] === 'pace-long')) {
+          overcorrections++;
+        }
+      }
+    });
+  });
+
+  return {
+    rounds: completed.length,
+    avgScore: (scoreSum / completed.length).toFixed(1),
+    avgVsPar: ((scoreSum - parSum) / completed.length).toFixed(1),
+    fairwayPct: fairwaysAttempted ? Math.round(fairwaysHit / fairwaysAttempted * 100) : 0,
+    girPct: girAttempts ? Math.round(girs / girAttempts * 100) : 0,
+    avgPutts: holesForPutts ? (totalPutts / holesForPutts * 18).toFixed(1) : '0',
+    scramblePct: scrambleAttempts ? Math.round(scrambleSuccess / scrambleAttempts * 100) : 0,
+    avgPenalties: (penaltyTotal / completed.length).toFixed(1),
+    bestScore: Math.min(...completed.map(totalScore)),
+    teeMisses, approachMisses, puttMissCounts,
+    puttDetailCounts, paceErrors, lineErrors, overcorrections,
+    firstPuttDistanceCounts,
+    girAttempts, fairwaysAttempted, totalPutts, holesForPutts,
+    scrambleAttempts, scrambleSuccess,
+    fairwayBunkers, greensideBunkers,
+    sandSaveAttempts, sandSaveSuccess,
+    sandSavePct: sandSaveAttempts ? Math.round(sandSaveSuccess / sandSaveAttempts * 100) : 0,
+    bunkersPerRound: ((fairwayBunkers + greensideBunkers) / completed.length).toFixed(1),
+    // Driving distance gap to peers
+    driveDeltas,
+    avgDriveYds: avgDriveYdsArr.length ? Math.round(avgDriveYdsArr.reduce((s,v)=>s+v,0) / avgDriveYdsArr.length) : null,
+    avgDriveDelta: driveDeltas.length ? Math.round(driveDeltas.reduce((s,d)=>s+d.delta,0) / driveDeltas.length) : null,
+    driveRoundsLogged: driveDeltas.length
+  };
+}
+
+// ============================================================
+// USGA HANDICAP CALCULATION
+// ============================================================
+// Score Differential = (113 / Slope) × (Adjusted Gross Score − Course Rating)
+// Handicap Index = average of best N differentials × 0.96
+// N depends on number of rounds:
+//   3 → best 1, 4 → best 1 (−1), 5 → best 1, 6 → best 2 (−1), 7-8 → best 2,
+//   9-11 → best 3, 12-14 → best 4, 15-16 → best 5, 17-18 → best 6, 19 → best 7, 20+ → best 8
+
+function scoreDifferential(round) {
+  const cr = round.courseRating || 72.0;
+  const slope = round.slope || 113;
+  const score = totalScore(round);
+  // For now we use the gross score; net double-bogey adjustment would be ideal but adds complexity
+  return (113 / slope) * (score - cr);
+}
+
+function calculateHandicapIndex(rounds) {
+  const completed = rounds.filter(r => r.completed);
+  if (completed.length < 3) return null;
+
+  // Use most recent 20 rounds
+  const recent = completed.slice(-20);
+  const n = recent.length;
+
+  // USGA "best N" table
+  let bestN;
+  if (n <= 3) bestN = 1;
+  else if (n === 4) bestN = 1;
+  else if (n === 5) bestN = 1;
+  else if (n === 6) bestN = 2;
+  else if (n <= 8) bestN = 2;
+  else if (n <= 11) bestN = 3;
+  else if (n <= 14) bestN = 4;
+  else if (n <= 16) bestN = 5;
+  else if (n <= 18) bestN = 6;
+  else if (n === 19) bestN = 7;
+  else bestN = 8;
+
+  // Adjustment per USGA (applied to lower index for small sample sizes)
+  let adjustment = 0;
+  if (n === 3) adjustment = -2.0;
+  else if (n === 4) adjustment = -1.0;
+  else if (n === 6) adjustment = -1.0;
+
+  const diffs = recent.map(scoreDifferential).sort((a, b) => a - b);
+  const bestDiffs = diffs.slice(0, bestN);
+  const avg = bestDiffs.reduce((s, d) => s + d, 0) / bestN;
+  let index = avg + adjustment;
+  // Cap at 54.0 per USGA; can be negative (+1, +2 etc.)
+  return Math.round(index * 10) / 10;
+}
+
+function handicapTrend(rounds, windowSize = 5) {
+  // Show the handicap index after each round, so we can plot a trend
+  const completed = rounds.filter(r => r.completed);
+  if (completed.length < 3) return [];
+  const trend = [];
+  for (let i = 3; i <= completed.length; i++) {
+    const subset = completed.slice(0, i);
+    const idx = calculateHandicapIndex(subset);
+    if (idx !== null) trend.push({ roundNumber: i, index: idx });
+  }
+  return trend;
+}
+
+// ============================================================
+// COACHING ANALYSIS — what is she actually doing wrong?
+// ============================================================
+
+function generateInsights(rounds) {
+  const completed = rounds.filter(r => r.completed);
+  const insights = [];
+
+  if (completed.length < 3) {
+    return { ready: false, roundsNeeded: 3 - completed.length, insights: [] };
+  }
+
+  const stats = aggregateStats(rounds);
+
+  // Compute per-area strokes lost vs. baseline (D1 college: 74 avg, 65% fairway, 65% GIR, 30 putts, 55% scramble)
+  // Each insight has: { area, severity (0-10), title, finding, prescription }
+
+  // --- TEE ANALYSIS ---
+  const teeMissTotal = Object.values(stats.teeMisses).reduce((s,v)=>s+v, 0);
+  if (teeMissTotal >= 5) {
+    const leftBias = stats.teeMisses.left + stats.teeMisses.wayLeft;
+    const rightBias = stats.teeMisses.right + stats.teeMisses.wayRight;
+    const total = leftBias + rightBias;
+    if (total > 0) {
+      const leftPct = Math.round(leftBias / total * 100);
+      const rightPct = Math.round(rightBias / total * 100);
+      // Bias is meaningful only if > 65% of misses to one side
+      if (leftPct >= 65) {
+        insights.push({
+          area: 'TEE',
+          severity: Math.min(10, leftBias),
+          title: 'Your misses go left',
+          finding: `${leftPct}% of tee misses (${leftBias} of ${total}) miss left. This is a real pattern, not random.`,
+          prescription: 'Likely a closed clubface at impact or an over-the-top swing path. On the range: alignment sticks down the target line, focus on holding off the release. Get a video of your downswing from face-on — if your hands are ahead of the ball at impact, you\'re closing the face.'
+        });
+      } else if (rightPct >= 65) {
+        insights.push({
+          area: 'TEE',
+          severity: Math.min(10, rightBias),
+          title: 'Your misses go right',
+          finding: `${rightPct}% of tee misses (${rightBias} of ${total}) miss right. This is a real pattern.`,
+          prescription: 'Common causes: open face at impact, weak grip, or losing posture through impact. Try a stronger grip (rotate left hand right by 1/4 inch) for one practice session and see if the ball flight changes. If not, video your swing — early extension is the other usual culprit.'
+        });
+      }
+    }
+    // Catastrophic miss check
+    if ((stats.teeMisses.wayLeft + stats.teeMisses.wayRight + stats.teeMisses.penalty) / teeMissTotal > 0.4) {
+      insights.push({
+        area: 'TEE',
+        severity: 8,
+        title: 'Too many "big" misses',
+        finding: `${stats.teeMisses.wayLeft + stats.teeMisses.wayRight + stats.teeMisses.penalty} of ${teeMissTotal} tee misses were way offline or penalties. Big misses cost ~1.5 strokes each — they\'re the highest-leverage thing to fix.`,
+        prescription: 'Trade distance for control off the tee on tight holes. Hit 3-wood or a long iron where penalty is in play. A 250-yard fairway is worth more than a 290-yard wayward drive.'
+      });
+    }
+  }
+
+  // --- APPROACH ANALYSIS ---
+  const appMissTotal = Object.values(stats.approachMisses).reduce((s,v)=>s+v, 0);
+  if (appMissTotal >= 6) {
+    const shortMisses = stats.approachMisses.short;
+    const longMisses = stats.approachMisses.long;
+    const leftMisses = stats.approachMisses.left;
+    const rightMisses = stats.approachMisses.right;
+    const chunked = stats.approachMisses.chunked;
+    const thinned = stats.approachMisses.thinned;
+
+    // Short bias is very common and costly
+    if (shortMisses / appMissTotal >= 0.35) {
+      insights.push({
+        area: 'APPROACH',
+        severity: 9,
+        title: 'You come up short too often',
+        finding: `${shortMisses} of ${appMissTotal} approach misses (${Math.round(shortMisses/appMissTotal*100)}%) were short. This is the single most common amateur mistake and the easiest to fix.`,
+        prescription: 'Most amateurs underclub on approach because they remember their best swing distance, not their average. For two weeks: take one more club than you think you need on every approach. Track if your GIR % goes up.'
+      });
+    }
+    if ((leftMisses + rightMisses) / appMissTotal >= 0.5) {
+      const direction = leftMisses > rightMisses ? 'left' : 'right';
+      const directionalPct = Math.round((Math.max(leftMisses, rightMisses) / appMissTotal) * 100);
+      insights.push({
+        area: 'APPROACH',
+        severity: 6,
+        title: `Approaches drift ${direction}`,
+        finding: `${directionalPct}% of approach misses drift ${direction}. Same direction as tee misses? That\'s a swing pattern. Opposite? Could be aim or alignment.`,
+        prescription: `Alignment sticks on the range. Set up to the target with a stick on the ground at your feet, second stick pointing at target. Hit 20 mid-irons with this setup. Most ${direction} misses fix themselves with alignment alone.`
+      });
+    }
+    if ((chunked + thinned) / appMissTotal >= 0.3) {
+      insights.push({
+        area: 'APPROACH',
+        severity: 7,
+        title: 'Strike inconsistency',
+        finding: `${chunked + thinned} of ${appMissTotal} approach misses were chunked or thinned. This is a low-point control issue — bigger than direction.`,
+        prescription: 'Towel drill: place a towel 6 inches behind the ball. Practice 50 wedge swings without hitting the towel. Re-trains low point forward of the ball. Do this for 2 weeks before worrying about direction.'
+      });
+    }
+  }
+
+  // --- PUTT ANALYSIS ---
+  const puttMissTotal = Object.values(stats.puttMissCounts).reduce((s,v)=>s+v, 0);
+
+  // NEW: pace vs line analysis from detailed tracking
+  const detailedTotal = stats.paceErrors + stats.lineErrors;
+  if (detailedTotal >= 5) {
+    const pacePct = stats.paceErrors / detailedTotal;
+    if (pacePct >= 0.65) {
+      const longCount = stats.puttDetailCounts['pace-long'];
+      const shortCount = stats.puttDetailCounts['pace-short'];
+      const direction = longCount > shortCount ? 'long' : 'short';
+      insights.push({
+        area: 'PUTTING',
+        severity: 9,
+        title: 'Pace control, not line',
+        finding: `${Math.round(pacePct*100)}% of putt misses were pace errors (${stats.paceErrors} of ${detailedTotal}). She\'s reading the line — she\'s misreading the green speed. Bias is ${direction}.`,
+        prescription: direction === 'long'
+          ? 'Lag putting drill, 40 feet to a 3-foot circle. The goal isn\'t to make it — it\'s to finish inside the circle. 20 reps per session. She\'ll learn to feel a green\'s speed by feel, not memory.'
+          : '"Never up, never in" — putt to 17 inches past the hole. Practice 12-foot putts where the target is the BACK of the cup, not the front. Aggressive pace eliminates the leave-short habit.'
+      });
+    }
+    if (stats.overcorrections >= 3) {
+      insights.push({
+        area: 'PUTTING',
+        severity: 8,
+        title: 'Overcorrecting on second putt',
+        finding: `${stats.overcorrections} times: missed long → then short, or short → then long. She\'s reacting to the first putt instead of trusting her read.`,
+        prescription: 'On the second putt, ignore what the first one did. Re-read the green from scratch. The hole hasn\'t moved. The break is the same. Most overcorrections come from "I hit it too hard last time, I\'ll baby this one" — that thinking is the problem.'
+      });
+    }
+  }
+
+  if (puttMissTotal >= 8) {
+    const left = stats.puttMissCounts.left;
+    const right = stats.puttMissCounts.right;
+    const short = stats.puttMissCounts.short;
+    const long = stats.puttMissCounts.long;
+
+    if (short / puttMissTotal >= 0.4) {
+      insights.push({
+        area: 'PUTTING',
+        severity: 8,
+        title: 'Leaving putts short',
+        finding: `${short} of ${puttMissTotal} putt misses came up short (${Math.round(short/puttMissTotal*100)}%). "Never up, never in" — short putts have zero chance.`,
+        prescription: 'Practice 12-foot putts to a tee 17 inches BEHIND the hole. Train yourself to roll putts to the back of the cup. The pace difference will eliminate most short misses.'
+      });
+    }
+    if (long / puttMissTotal >= 0.3) {
+      insights.push({
+        area: 'PUTTING',
+        severity: 7,
+        title: 'Hitting putts too hard',
+        finding: `${long} of ${puttMissTotal} putt misses went long (${Math.round(long/puttMissTotal*100)}%). 3-putts are the score-killer here.`,
+        prescription: 'Lag putting drill: 40-foot putts to a 3-foot circle. 20 putts per session. Count how many finish inside the circle. Track the percentage weekly.'
+      });
+    }
+    if ((left + right) / puttMissTotal >= 0.55) {
+      const direction = left > right ? 'left' : 'right';
+      insights.push({
+        area: 'PUTTING',
+        severity: 6,
+        title: `Putts miss ${direction} most`,
+        finding: `${Math.round(Math.max(left,right)/puttMissTotal*100)}% of putt misses are ${direction}. Likely a face angle at impact issue.`,
+        prescription: `Gate drill: two tees just wider than your putter head, 6 inches in front of the ball. Hit putts through the gate. Trains square face at impact. Do 50 reps per practice.`
+      });
+    }
+  }
+
+  // --- SCORING vs. baseline ---
+  const avgScoreNum = parseFloat(stats.avgScore);
+  if (parseInt(stats.avgPutts) > 33) {
+    insights.push({
+      area: 'PUTTING',
+      severity: 9,
+      title: 'Putts per round are too high',
+      finding: `Averaging ${stats.avgPutts} putts per round. Top D1 players average 29-31. That gap is ${Math.round((parseFloat(stats.avgPutts) - 30))} strokes per round.`,
+      prescription: 'Practice putting more than full swing for the next month. 3-putts and short missed putts are the most fixable strokes in your bag right now.'
+    });
+  }
+  if (stats.girPct < 50 && stats.rounds >= 5) {
+    insights.push({
+      area: 'APPROACH',
+      severity: 7,
+      title: 'GIR % is below your tier',
+      finding: `Hitting ${stats.girPct}% of greens. Elite D1 is 65%+. This is where the biggest score gains live.`,
+      prescription: 'Iron play is the bridge to your next scoring tier. Spend more range time on 150-180 yard shots than on driver. Aim to add 5% GIR per quarter.'
+    });
+  }
+  if (stats.scrambleAttempts >= 10 && stats.scramblePct < 35) {
+    insights.push({
+      area: 'SHORT GAME',
+      severity: 8,
+      title: 'Short game is leaking strokes',
+      finding: `Saving par from off the green only ${stats.scramblePct}% of the time. Elite D1 is 55%+. Roughly ${Math.round((55-stats.scramblePct)/100 * stats.scrambleAttempts * 0.7)} strokes lost across your data set here.`,
+      prescription: '30 minutes of short game per range session. 3 stations: 10-yard chip, 25-yard pitch, greenside bunker. Hit 15 from each. This is the lowest-hanging fruit for score reduction.'
+    });
+  }
+  if (parseFloat(stats.avgPenalties) >= 1.5) {
+    insights.push({
+      area: 'COURSE MGMT',
+      severity: 8,
+      title: 'Too many penalty strokes',
+      finding: `Averaging ${stats.avgPenalties} penalties per round. Each penalty costs ~1.5 strokes. That\'s ${(parseFloat(stats.avgPenalties) * 1.5).toFixed(1)} strokes per round in penalties alone.`,
+      prescription: 'Course management, not swing changes, fix this. On any tee shot with OB or water within your shot pattern, take 2 fewer clubs. Score before ego.'
+    });
+  }
+
+  // --- BUNKER ANALYSIS ---
+  if (parseFloat(stats.bunkersPerRound) >= 3) {
+    insights.push({
+      area: 'COURSE MGMT',
+      severity: 7,
+      title: 'Finding too many bunkers',
+      finding: `Averaging ${stats.bunkersPerRound} bunkers per round (${stats.fairwayBunkers} fairway, ${stats.greensideBunkers} greenside). Tour pros average ~1.5/round. This is a target-selection issue more than a swing one.`,
+      prescription: 'Look at your approach shot misses on the Stats tab. If you keep finding bunkers short-right, aim left-center of the green even on a center pin. Take the bunker out of play and let the miss go pin-high in the rough instead.'
+    });
+  }
+  if (stats.sandSaveAttempts >= 5 && stats.sandSavePct < 30) {
+    insights.push({
+      area: 'SHORT GAME',
+      severity: 8,
+      title: 'Bunker play is leaking strokes',
+      finding: `Saving par from sand only ${stats.sandSavePct}% of the time (${stats.sandSaveSuccess} of ${stats.sandSaveAttempts}). Elite junior girls are at 40%+. Pros at 55%+.`,
+      prescription: 'Bunker fundamentals: open the face BEFORE you take your grip, weight 60% forward, hit 2 inches behind the ball, accelerate through. 15 min twice a week in a practice bunker. Sand saves are pure technique — once you have it, it stays.'
+    });
+  }
+  if (stats.greensideBunkers >= 8 && stats.sandSavePct >= 50) {
+    insights.push({
+      area: 'STRENGTH',
+      severity: 3,
+      title: 'Your bunker game is a weapon',
+      finding: `${stats.sandSavePct}% sand saves on ${stats.sandSaveAttempts} attempts. That\'s elite-level work — keep it sharp.`,
+      prescription: 'When you\'re scoring well, bunker play won\'t move the needle. When you\'re scoring badly, knowing you can save par from sand keeps the round from spiraling. Maintain — don\'t over-practice it.'
+    });
+  }
+
+  // --- DRIVING DISTANCE GAP ---
+  if (stats.driveRoundsLogged >= 3 && stats.avgDriveDelta <= -20) {
+    insights.push({
+      area: 'DISTANCE',
+      severity: 7,
+      title: 'Driving gap to peers is real',
+      finding: `Averaging ${stats.avgDriveDelta} yards behind your playing partners across ${stats.driveRoundsLogged} rounds. At D1, this means 1-2 clubs more into every par 4 and 5 — a real scoring disadvantage that compounds.`,
+      prescription: 'Two paths, both worth doing. (1) Speed training: SuperSpeed Golf sticks 3x/week, 10 min sessions. Most junior girls add 8-15 mph clubhead speed in 6 months — that\'s 20-40 yards of carry. (2) Course management to neutralize the gap: hit driver, accept a longer iron in, focus on iron play precision. Distance is fixable; the recruiting clock is not.'
+    });
+  }
+  if (stats.driveRoundsLogged >= 5 && stats.avgDriveDelta >= -10) {
+    insights.push({
+      area: 'STRENGTH',
+      severity: 3,
+      title: 'Driving distance not a weakness',
+      finding: `Holding within ${Math.abs(stats.avgDriveDelta)} yards of peers across ${stats.driveRoundsLogged} rounds. That\'s competitive distance.`,
+      prescription: 'Stop worrying about it. Distance gets the attention but precision wins college tournaments. Lean into your iron play and short game — that\'s where strokes are gained.'
+    });
+  }
+
+  // Sort by severity, then return top 3-5
+  insights.sort((a, b) => b.severity - a.severity);
+
+  return {
+    ready: true,
+    insights: insights.slice(0, 5),
+    totalIssuesFound: insights.length
+  };
+}
+
+// ============================================================
+// PLAY VIEW
+// ============================================================
+
+function renderPlay() {
+  const root = document.getElementById('view-play');
+
+  if (!activeRound) {
+    const bs = backupStatus();
+    const showNudge = bs.urgent;
+    const hasData = history.filter(r => r.completed).length > 0;
+    root.innerHTML = `
+      ${showNudge ? `
+      <div class="backup-nudge">
+        <div class="backup-nudge-text">⚠ ${bs.text}. Back up before you lose it.</div>
+        <button class="backup-nudge-btn" onclick="exportJSON()">Back up</button>
+      </div>
+      ` : ''}
+      <div class="welcome">
+        <div class="welcome-tagline">Track every round · build the data</div>
+        <div class="welcome-name">Ready to play?</div>
+        <p style="color:var(--ink-faint); font-size:14px; max-width:300px; margin:0 auto 24px;">
+          Pick where you're playing today.
+        </p>
+
+        <div class="course-picker">
+          ${Object.values(COURSE_LIBRARY).map(c => `
+            <button class="course-pick-btn" onclick="startRound('${c.id}')">
+              <div class="course-pick-name">${c.name}</div>
+              <div class="course-pick-detail">${c.location} · Par ${c.par}</div>
+            </button>
+          `).join('')}
+          <button class="course-pick-btn other" onclick="startRound()">
+            <div class="course-pick-name">Other course</div>
+            <div class="course-pick-detail">Enter manually</div>
+          </button>
+        </div>
+
+        ${history.filter(r=>r.completed).length ? `
+        <div style="margin-top:32px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.08em;">
+          ${history.filter(r=>r.completed).length} rounds · last: ${getLastRoundLabel()}
+        </div>` : ''}
+
+        <div style="margin-top:36px; padding-top:24px; border-top:1px dashed var(--rule);">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; color:var(--flag-deep); font-weight:700; margin-bottom:10px;">Practice mode</div>
+          <p style="font-size:12px; color:var(--ink-faint); max-width:280px; margin:0 auto 12px; line-height:1.5;">
+            Pull up strategy notes for a course you're practicing. No round started.
+          </p>
+          ${Object.values(COURSE_LIBRARY).map(c => `
+            <button class="practice-link-btn" onclick="openPractice('${c.id}')">${c.name} · practice</button>
+          `).join('')}
+        </div>
+        ${!hasData ? `
+        <div style="margin-top:48px; padding-top:24px; border-top:1px solid var(--rule);">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; color:var(--flag-deep); font-weight:700; margin-bottom:10px;">Bobby · Demo mode</div>
+          <p style="font-size:13px; color:var(--ink-faint); max-width:280px; margin:0 auto 14px; line-height:1.5;">
+            Load 12 realistic rounds to see how the app feels with data. Clear it before McKenzie installs.
+          </p>
+          <button class="demo-btn" onclick="loadDemoData()">Load demo data</button>
+        </div>
+        ` : ''}
+      </div>
+    `;
+    return;
+  }
+
+  const hole = activeRound.holes[currentHole - 1];
+  const par = hole.par;
+  const computedScore = computeHoleScore(hole);
+  const displayScore = holeScore(hole);
+  const vsParText = displayScore === par ? 'PAR' : (displayScore < par ? (par - displayScore) + ' UNDER' : (displayScore - par) + ' OVER');
+  const isPar3 = par === 3;
+  const played = holesPlayed(activeRound);
+  const total = totalScore(activeRound);
+  const totalPar_ = totalPar(activeRound);
+  const totalDiff = total - totalPar_;
+  const totalDiffText = totalDiff === 0 ? 'E' : totalDiff > 0 ? '+' + totalDiff : '' + totalDiff;
+  const thruText = played > 0 ? `Thru ${played}` : 'Start hole 1';
+
+  root.innerHTML = `
+    <div class="round-header">
+      <input class="round-course-input" id="course-input" placeholder="Course name..." value="${escapeHtml(activeRound.course || '')}">
+    </div>
+
+    <div class="running-total ${totalDiff < 0 ? 'under' : totalDiff > 0 ? 'over' : 'even'}">
+      <div class="running-total-main">
+        <div class="running-total-score">${total || '—'}</div>
+        <div class="running-total-diff">${played > 0 ? totalDiffText : ''}</div>
+      </div>
+      <div class="running-total-thru">${thruText}${played > 0 ? ` · par ${totalPar_}` : ''}</div>
+    </div>
+
+    <details class="course-meta" ${activeRound.courseRating === 72.0 && activeRound.slope === 113 && !activeRound.course ? 'open' : ''}>
+      <summary>
+        <span>Course rating ${activeRound.courseRating} · Slope ${activeRound.slope}${activeRound.tees ? ' · ' + escapeHtml(activeRound.tees) : ''}</span>
+        <span class="course-meta-edit">edit</span>
+      </summary>
+      <div class="course-meta-body">
+        <div class="course-meta-row">
+          <label>Tees</label>
+          <input type="text" id="tees-input" placeholder="e.g. White, Blue" value="${escapeHtml(activeRound.tees || '')}">
+        </div>
+        <div class="course-meta-row">
+          <label>Course rating</label>
+          <input type="number" step="0.1" min="60" max="80" id="cr-input" value="${activeRound.courseRating}">
+        </div>
+        <div class="course-meta-row">
+          <label>Slope</label>
+          <input type="number" step="1" min="55" max="155" id="slope-input" value="${activeRound.slope}">
+        </div>
+        <div class="course-meta-hint">Both numbers are on the scorecard. Needed for your USGA handicap to be accurate. Defaults work if you don't know.</div>
+        ${activeRound.courseId ? `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06);">
+          <button onclick="resyncCoursePars()" style="background:var(--paper); border:1px solid var(--rule); padding:8px 12px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:10px; color:var(--fairway); cursor:pointer; text-transform:uppercase; letter-spacing:0.08em; width:100%;">↻ Reload pars from course library</button>
+          <div style="font-size:11px; color:var(--ink-faint); margin-top:6px; font-style:italic; line-height:1.4;">Use this if your hole pars look wrong — it pulls the official pars from ${escapeHtml(COURSE_LIBRARY[activeRound.courseId].name)}.</div>
+        </div>
+        ` : `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.06);">
+          <button onclick="chooseCourseToLink()" style="background:var(--fairway); border:none; padding:10px 12px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:10px; color:var(--paper); cursor:pointer; text-transform:uppercase; letter-spacing:0.08em; width:100%;">↻ Link to course library</button>
+          <div style="font-size:11px; color:var(--ink-faint); margin-top:6px; font-style:italic; line-height:1.4;">Connect this round to a course in the library. Pulls in the official pars, rating, and slope. Your shot data stays.</div>
+        </div>
+        `}
+      </div>
+    </details>
+
+    <div class="hole-nav">
+      <button class="hole-nav-btn" onclick="navHole(-1)" ${currentHole === 1 ? 'disabled' : ''}>‹</button>
+      <div class="hole-display">
+        <div class="hole-number">${currentHole}</div>
+        <div class="hole-par">
+          PAR
+          <div class="par-selector">
+            ${[3,4,5].map(p => `<button class="par-btn ${par===p?'active':''}" onclick="setPar(${p})">${p}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <button class="hole-nav-btn" onclick="navHole(1)" ${currentHole === 18 ? 'disabled' : ''}>›</button>
+    </div>
+
+    ${activeRound.courseId && COURSE_LIBRARY[activeRound.courseId] ? (() => {
+      const libCourse = COURSE_LIBRARY[activeRound.courseId];
+      const libHole = libCourse.holes.find(h => h.num === currentHole);
+      const strategy = getHoleStrategy(activeRound.courseId, currentHole);
+      const isEdited = courseNoteOverrides[activeRound.courseId] && courseNoteOverrides[activeRound.courseId][currentHole] !== undefined;
+      return libHole ? `
+      <details class="strategy-card">
+        <summary>
+          <div class="strategy-summary-left">
+            <span class="strategy-tag">Strategy</span>
+            <span class="strategy-yards">${libHole.yds}y · Hcp ${libHole.hcp}${isEdited ? ' · edited' : ''}</span>
+          </div>
+          <span class="strategy-chevron">▾</span>
+        </summary>
+        <div class="strategy-body">
+          <div class="strategy-text" id="strategy-display-${currentHole}">${escapeHtml(strategy || '')}</div>
+          <button class="strategy-edit-btn" onclick="editStrategy(${currentHole})">Edit strategy</button>
+        </div>
+      </details>
+      ` : '';
+    })() : ''}
+
+    <div class="score-block">
+      <div class="score-block-row">
+        <div class="score-block-left">
+          <div class="entry-label">This hole</div>
+          <div class="score-number-row">
+            <div class="score-number">${displayScore || '—'}</div>
+            <div class="score-vs-par-inline">${displayScore ? vsParText : 'Log shots'}</div>
+          </div>
+        </div>
+        <div class="score-block-right">
+          <button class="score-edit-btn ${hole.scoreOverride ? 'active' : ''}" onclick="toggleScoreOverride()">${hole.scoreOverride ? 'Auto' : 'Set'}</button>
+        </div>
+      </div>
+      ${hole.scoreOverride ? `
+      <div class="score-override-row">
+        <button class="score-btn-big" onclick="adjScore(-1)">−</button>
+        <div class="score-override-num">${hole.score || par}</div>
+        <button class="score-btn-big" onclick="adjScore(1)">+</button>
+      </div>
+      ` : ''}
+    </div>
+
+    ${!isPar3 ? `
+    <div class="entry-block">
+      <div class="entry-label">Tee shot ${hole.tee ? `<span class="entry-label-tag ${hole.tee==='fairway'?'good':'bad'}">${teeLabel(hole.tee)}${hole.teeBunker ? ' · bunker' : ''}</span>` : ''}</div>
+      <div class="btn-group cols-3" style="margin-bottom:6px;">
+        <button class="data-btn ${hole.tee==='wayLeft'?'active bad':''}" onclick="setField('tee','wayLeft')">⟵⟵ Way</button>
+        <button class="data-btn ${hole.tee==='fairway'?'active good':''}" onclick="setField('tee','fairway')">Fairway</button>
+        <button class="data-btn ${hole.tee==='wayRight'?'active bad':''}" onclick="setField('tee','wayRight')">Way ⟶⟶</button>
+      </div>
+      <div class="btn-group cols-3">
+        <button class="data-btn ${hole.tee==='left'?'active warn':''}" onclick="setField('tee','left')">← Left</button>
+        <button class="data-btn ${hole.tee==='penalty'?'active bad':''}" onclick="setField('tee','penalty')">Penalty</button>
+        <button class="data-btn ${hole.tee==='right'?'active warn':''}" onclick="setField('tee','right')">Right →</button>
+      </div>
+      ${hole.tee && hole.tee !== 'fairway' && hole.tee !== 'penalty' ? `
+      <div class="bunker-toggle" onclick="toggleField('teeBunker')">
+        <div class="bunker-toggle-check ${hole.teeBunker ? 'on' : ''}">${hole.teeBunker ? '✓' : ''}</div>
+        <div class="bunker-toggle-label">In fairway bunker</div>
+      </div>
+      ` : ''}
+
+      ${hole.tee ? `
+      <div class="hole-drive-gap">
+        <div class="hole-drive-label">Drive vs. peers on this hole</div>
+        <div class="hole-drive-grid">
+          ${[
+            { val: -50, label: '−50' },
+            { val: -30, label: '−30' },
+            { val: -15, label: '−15' },
+            { val: 0, label: 'Even' },
+            { val: 15, label: '+15' },
+            { val: 30, label: '+30' }
+          ].map(o => `
+            <button class="hole-drive-btn ${hole.driveDelta === o.val ? 'active' : ''} ${o.val < 0 ? 'behind' : o.val > 0 ? 'ahead' : 'even'}"
+              onclick="setHoleDriveDelta(${o.val})">${o.label}</button>
+          `).join('')}
+        </div>
+        <details class="hole-drive-exact">
+          <summary><span>Have actual yardages?</span><span class="strategy-chevron">▾</span></summary>
+          <div style="padding-top:8px;">
+            <div class="driving-card-row">
+              <label class="driving-card-label">Your drive</label>
+              <div class="driving-input-wrap">
+                <input type="number" class="driving-input" id="hole-drive-yds" min="100" max="350" step="5" placeholder="—" value="${hole.driveYds || ''}">
+                <span class="driving-unit">yds</span>
+              </div>
+            </div>
+            <div class="driving-card-row">
+              <label class="driving-card-label">Their drive</label>
+              <div class="driving-input-wrap">
+                <input type="number" class="driving-input" id="hole-peer-yds" min="100" max="350" step="5" placeholder="—" value="${hole.peerDriveYds || ''}">
+                <span class="driving-unit">yds</span>
+              </div>
+            </div>
+            ${(hole.driveYds && hole.peerDriveYds) ? (() => {
+              const d = hole.driveYds - hole.peerDriveYds;
+              return `<div class="drive-computed-delta">Computed: <strong>${d > 0 ? '+' : ''}${d} yds</strong> ${d < 0 ? 'behind' : d > 0 ? 'ahead' : 'even'}</div>`;
+            })() : ''}
+          </div>
+        </details>
+      </div>
+      ` : ''}
+    </div>
+    ` : ''}
+
+    ${par === 5 ? `
+    <div class="entry-block">
+      <div class="entry-label">Second shot ${hole.secondShot ? `<span class="entry-label-tag ${(hole.secondShot==='fairway'||hole.secondShot==='green')?'good':'bad'}">${secondShotLabel(hole.secondShot)}${hole.secondBunker ? ' · bunker' : ''}</span>` : ''}</div>
+      <div class="btn-group cols-3" style="margin-bottom:6px;">
+        <button class="data-btn ${hole.secondShot==='green'?'active good':''}" onclick="setField('secondShot','green')">On green!</button>
+        <button class="data-btn ${hole.secondShot==='fairway'?'active good':''}" onclick="setField('secondShot','fairway')">Fairway</button>
+        <button class="data-btn ${hole.secondShot==='short'?'active warn':''}" onclick="setField('secondShot','short')">Short of green</button>
+      </div>
+      <div class="btn-group cols-3" style="margin-bottom:6px;">
+        <button class="data-btn ${hole.secondShot==='left'?'active warn':''}" onclick="setField('secondShot','left')">← Left</button>
+        <button class="data-btn ${hole.secondShot==='penalty'?'active bad':''}" onclick="setField('secondShot','penalty')">Penalty</button>
+        <button class="data-btn ${hole.secondShot==='right'?'active warn':''}" onclick="setField('secondShot','right')">Right →</button>
+      </div>
+      <div class="btn-group cols-2">
+        <button class="data-btn ${hole.secondShot==='chunked'?'active bad':''}" onclick="setField('secondShot','chunked')">Chunked</button>
+        <button class="data-btn ${hole.secondShot==='thinned'?'active bad':''}" onclick="setField('secondShot','thinned')">Thinned</button>
+      </div>
+      ${hole.secondShot && hole.secondShot !== 'fairway' && hole.secondShot !== 'green' && hole.secondShot !== 'penalty' ? `
+      <div class="bunker-toggle" onclick="toggleField('secondBunker')">
+        <div class="bunker-toggle-check ${hole.secondBunker ? 'on' : ''}">${hole.secondBunker ? '✓' : ''}</div>
+        <div class="bunker-toggle-label">In bunker</div>
+      </div>
+      ` : ''}
+    </div>
+    ` : ''}
+
+    ${(par !== 5 || (hole.secondShot && hole.secondShot !== 'green')) ? `
+    <div class="entry-block">
+      <div class="entry-label">${isPar3 ? 'Tee shot' : (par === 5 ? 'Third shot (approach)' : 'Approach')} ${hole.approach ? `<span class="entry-label-tag ${hole.approach==='gir'?'good':'bad'}">${approachLabel(hole.approach)}${hole.approachBunker ? ' · bunker' : ''}</span>` : ''}</div>
+      <div class="btn-group cols-3" style="margin-bottom:6px;">
+        <button class="data-btn ${hole.approach==='gir'?'active good':''}" onclick="setField('approach','gir')">${isPar3 ? 'On green' : 'GIR'}</button>
+        <button class="data-btn ${hole.approach==='short'?'active bad':''}" onclick="setField('approach','short')">Short</button>
+        <button class="data-btn ${hole.approach==='long'?'active bad':''}" onclick="setField('approach','long')">Long</button>
+      </div>
+      <div class="btn-group cols-2" style="margin-bottom:6px;">
+        <button class="data-btn ${hole.approach==='left'?'active bad':''}" onclick="setField('approach','left')">Miss Left</button>
+        <button class="data-btn ${hole.approach==='right'?'active bad':''}" onclick="setField('approach','right')">Miss Right</button>
+      </div>
+      <div class="btn-group cols-2">
+        <button class="data-btn ${hole.approach==='chunked'?'active bad':''}" onclick="setField('approach','chunked')">Chunked</button>
+        <button class="data-btn ${hole.approach==='thinned'?'active bad':''}" onclick="setField('approach','thinned')">Thinned</button>
+      </div>
+      ${hole.approach && hole.approach !== 'gir' && hole.approach !== 'na' ? `
+      <div class="bunker-toggle" onclick="toggleField('approachBunker')">
+        <div class="bunker-toggle-check ${hole.approachBunker ? 'on' : ''}">${hole.approachBunker ? '✓' : ''}</div>
+        <div class="bunker-toggle-label">In greenside bunker</div>
+      </div>
+      ` : ''}
+    </div>
+    ` : ''}
+
+    ${(hole.approach && hole.approach !== 'gir' && hole.approach !== 'na') ? `
+    <div class="entry-block">
+      <div class="entry-label">
+        <span>Recovery shots${hole.recoveries && hole.recoveries.length ? ' · ' + hole.recoveries.length : ''}</span>
+      </div>
+
+      ${(hole.recoveries || []).map((rec, idx) => `
+        <div class="recovery-item">
+          <div class="recovery-header">
+            <div class="recovery-label">Shot ${idx + 1}${rec.bunker ? ' · from bunker' : ''}</div>
+            <button class="recovery-remove" onclick="removeRecovery(${idx})">×</button>
+          </div>
+          <div class="btn-group cols-3" style="margin-bottom:6px;">
+            <button class="data-btn ${rec.result==='holed'?'active good':''}" onclick="setRecoveryResult(${idx},'holed')">Holed</button>
+            <button class="data-btn ${rec.result==='good'?'active good':''}" onclick="setRecoveryResult(${idx},'good')">On green ≤6ft</button>
+            <button class="data-btn ${rec.result==='okay'?'active warn':''}" onclick="setRecoveryResult(${idx},'okay')">On green 6-15ft</button>
+          </div>
+          <div class="btn-group cols-3">
+            <button class="data-btn ${rec.result==='poor'?'active bad':''}" onclick="setRecoveryResult(${idx},'poor')">On green 15ft+</button>
+            <button class="data-btn ${rec.result==='still-off'?'active bad':''}" onclick="setRecoveryResult(${idx},'still-off')">Still off green</button>
+            <button class="data-btn ${rec.result==='mishit'?'active bad':''}" onclick="setRecoveryResult(${idx},'mishit')">Mishit</button>
+          </div>
+        </div>
+      `).join('')}
+
+      <button class="add-recovery-btn" onclick="addRecovery()">+ ${hole.recoveries && hole.recoveries.length ? 'Add another recovery' : 'Add ' + (hole.approachBunker ? 'bunker shot' : 'chip/pitch')}</button>
+    </div>
+    ` : ''}
+
+    <div class="entry-block">
+      <div class="entry-label">Putts ${hole.putts !== null && hole.putts !== undefined ? `<span class="entry-label-tag">${hole.putts}</span>` : ''}</div>
+      <div class="btn-group cols-5">
+        ${[0,1,2,3,4].map(p => `<button class="data-btn ${hole.putts===p?'active':''}" onclick="setPutts(${p})">${p}</button>`).join('')}
+      </div>
+
+      ${hole.putts >= 1 ? `
+      <div class="putt-detail">
+        <div class="putt-section-label">First putt distance</div>
+        <div class="btn-group cols-3">
+          <button class="data-btn ${hole.firstPuttDistance==='short'?'active':''}" onclick="setFirstPuttDistance('short')">≤6 ft</button>
+          <button class="data-btn ${hole.firstPuttDistance==='mid'?'active':''}" onclick="setFirstPuttDistance('mid')">6–20 ft</button>
+          <button class="data-btn ${hole.firstPuttDistance==='long'?'active':''}" onclick="setFirstPuttDistance('long')">20+ ft</button>
+        </div>
+      </div>
+      ` : ''}
+
+      ${hole.putts >= 2 ? `
+      <div class="putt-detail">
+        <div class="putt-section-label">What went wrong on each miss</div>
+        ${Array.from({length: hole.putts - 1}, (_, i) => {
+          const idx = i;
+          const detail = (hole.puttDetails || [])[idx] || null;
+          const type = detail ? detail.type : null;
+          return `
+            <div class="putt-miss-row">
+              <div class="putt-miss-label">Putt ${idx + 1}</div>
+              <div class="putt-miss-options">
+                <button class="putt-detail-btn ${type==='pace-long'?'active warn':''}" onclick="setPuttDetail(${idx}, 'pace-long')">Pace: long</button>
+                <button class="putt-detail-btn ${type==='pace-short'?'active warn':''}" onclick="setPuttDetail(${idx}, 'pace-short')">Pace: short</button>
+                <button class="putt-detail-btn ${type==='line-left'?'active bad':''}" onclick="setPuttDetail(${idx}, 'line-left')">Line: left</button>
+                <button class="putt-detail-btn ${type==='line-right'?'active bad':''}" onclick="setPuttDetail(${idx}, 'line-right')">Line: right</button>
+                <button class="putt-detail-btn ${type==='lipped'?'active':''}" onclick="setPuttDetail(${idx}, 'lipped')">Lipped</button>
+                <button class="putt-detail-btn ${type==='mishit'?'active bad':''}" onclick="setPuttDetail(${idx}, 'mishit')">Mishit</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+        ${(() => {
+          // Pattern detection: long-then-short, short-then-long
+          const details = (hole.puttDetails || []).slice(0, hole.putts - 1).filter(d => d);
+          if (details.length >= 2) {
+            const types = details.map(d => d.type);
+            if (types[0] === 'pace-long' && types[1] === 'pace-short') {
+              return `<div class="putt-pattern">⚠ Long then short — overcorrection on pace. Read the speed of the green better on the first putt.</div>`;
+            }
+            if (types[0] === 'pace-short' && types[1] === 'pace-long') {
+              return `<div class="putt-pattern">⚠ Short then long — overcorrection on pace.</div>`;
+            }
+            if (types.every(t => t && t.startsWith('pace-'))) {
+              return `<div class="putt-pattern">⚠ Pace issue on every putt — green speed misread.</div>`;
+            }
+            if (types.every(t => t && t.startsWith('line-'))) {
+              return `<div class="putt-pattern">⚠ Line issue on every putt — break misread.</div>`;
+            }
+          }
+          return '';
+        })()}
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="entry-block">
+      <div class="entry-label">Penalties this hole <span class="entry-label-tag">${hole.penalties}</span></div>
+      <div class="btn-group cols-4">
+        ${[0,1,2,3].map(n => `<button class="data-btn ${hole.penalties===n?'active bad':''}" onclick="setField('penalties',${n})">${n}</button>`).join('')}
+      </div>
+    </div>
+
+    <div class="entry-block">
+      <div class="entry-label">Note for this hole</div>
+      <textarea class="notes-input" id="hole-notes" placeholder="Quick — wind, lie, what happened..." oninput="updateHoleNote(this.value)">${escapeHtml(hole.notes || '')}</textarea>
+      <div class="quick-tags">
+        ${['Wind', 'Bad lie', 'Bad bounce', 'Nerves', 'Lost focus', 'Good swing', 'Pressure'].map(t =>
+          `<button class="quick-tag" onclick="appendNote('${t}')">+${t}</button>`).join('')}
+      </div>
+    </div>
+
+    ${currentHole === 18 || holesPlayed(activeRound) >= 9 ? `
+      <button class="finish-btn" onclick="confirmFinish()">Finish round</button>
+    ` : ''}
+  `;
+
+  // Wire up per-hole drive inputs (if shown)
+  const holeDriveYds = document.getElementById('hole-drive-yds');
+  if (holeDriveYds) {
+    holeDriveYds.addEventListener('input', e => {
+      const v = parseInt(e.target.value, 10);
+      activeRound.holes[currentHole - 1].driveYds = isNaN(v) ? null : v;
+      debouncedSave();
+    });
+    holeDriveYds.addEventListener('blur', () => renderPlay());
+  }
+  const holePeerYds = document.getElementById('hole-peer-yds');
+  if (holePeerYds) {
+    holePeerYds.addEventListener('input', e => {
+      const v = parseInt(e.target.value, 10);
+      activeRound.holes[currentHole - 1].peerDriveYds = isNaN(v) ? null : v;
+      debouncedSave();
+    });
+    holePeerYds.addEventListener('blur', () => renderPlay());
+  }
+
+  const courseInput = document.getElementById('course-input');
+  if (courseInput) {
+    courseInput.addEventListener('input', e => {
+      activeRound.course = e.target.value;
+      debouncedSave();
+    });
+  }
+
+  const teesInput = document.getElementById('tees-input');
+  if (teesInput) {
+    teesInput.addEventListener('input', e => {
+      activeRound.tees = e.target.value;
+      debouncedSave();
+    });
+  }
+
+  const crInput = document.getElementById('cr-input');
+  if (crInput) {
+    crInput.addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v) && v >= 60 && v <= 80) {
+        activeRound.courseRating = v;
+        debouncedSave();
+      }
+    });
+  }
+
+  const slopeInput = document.getElementById('slope-input');
+  if (slopeInput) {
+    slopeInput.addEventListener('input', e => {
+      const v = parseInt(e.target.value);
+      if (!isNaN(v) && v >= 55 && v <= 155) {
+        activeRound.slope = v;
+        debouncedSave();
+      }
+    });
+  }
+}
+
+// ============================================================
+// LABELS
+// ============================================================
+
+function teeLabel(t) {
+  return { fairway:'Fairway', left:'Left', right:'Right', wayLeft:'Way left', wayRight:'Way right', penalty:'Penalty' }[t] || t;
+}
+function secondShotLabel(s) {
+  return { green:'On green!', fairway:'Fairway', short:'Short', left:'Left', right:'Right', wayLeft:'Way left', wayRight:'Way right', penalty:'Penalty', chunked:'Chunked', thinned:'Thinned' }[s] || s;
+}
+function approachLabel(a) {
+  return { gir:'On green', short:'Short', long:'Long', left:'Left', right:'Right', chunked:'Chunked', thinned:'Thinned' }[a] || a;
+}
+function chipLabel(c) {
+  return { holed:'Holed!', good:'≤6 ft', okay:'6-15 ft', poor:'15+ ft', mishit:'Mishit' }[c] || c;
+}
+
+// ============================================================
+// STATS VIEW
+// ============================================================
+
+function renderStats() {
+  const root = document.getElementById('view-stats');
+  const stats = aggregateStats(history);
+
+  if (!stats) {
+    root.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⛳</div>
+        <div class="empty-title">No stats yet</div>
+        <div class="empty-sub">Finish a round to see your numbers.</div>
+      </div>`;
+    return;
+  }
+
+  const last10 = history.filter(r => r.completed).slice(-10);
+  const hcpIndex = calculateHandicapIndex(history);
+  const completedCount = history.filter(r => r.completed).length;
+
+  let hcpHtml;
+  if (hcpIndex !== null) {
+    const indexDisplay = hcpIndex < 0 ? '+' + Math.abs(hcpIndex).toFixed(1) : hcpIndex.toFixed(1);
+    const reliabilityText = completedCount >= 20 ? 'USGA-compliant' : `Estimate · ${20 - completedCount} more rounds for official`;
+    const recent = history.filter(r => r.completed).slice(-20);
+    const avgRating = (recent.reduce((s,r) => s + (r.courseRating||72), 0) / recent.length).toFixed(1);
+    hcpHtml = `
+      <div class="handicap-card">
+        <div class="handicap-label">Handicap Index</div>
+        <div class="handicap-value">${indexDisplay}</div>
+        <div class="handicap-detail">${reliabilityText}</div>
+        <div class="handicap-meta">
+          <div class="handicap-meta-item">
+            <div class="handicap-meta-label">Rounds</div>
+            <div class="handicap-meta-value">${completedCount}</div>
+          </div>
+          <div class="handicap-meta-item">
+            <div class="handicap-meta-label">Best score</div>
+            <div class="handicap-meta-value">${stats.bestScore}</div>
+          </div>
+          <div class="handicap-meta-item">
+            <div class="handicap-meta-label">Avg rating</div>
+            <div class="handicap-meta-value">${avgRating}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    hcpHtml = `
+      <div class="handicap-card">
+        <div class="handicap-label">Handicap Index</div>
+        <div class="handicap-value-pending">${3 - completedCount} more round${3 - completedCount === 1 ? '' : 's'} needed</div>
+        <div class="handicap-detail">USGA requires minimum 3 rounds to calculate</div>
+      </div>
+    `;
+  }
+
+  root.innerHTML = `
+    <div class="stats-header">
+      <div class="stats-sub">Career · ${stats.rounds} rounds</div>
+      <div class="stats-title">The Numbers</div>
+    </div>
+
+    ${hcpHtml}
+
+    <div class="stats-grid">
+      <div class="stat-card featured">
+        <div class="stat-label">Scoring average</div>
+        <div class="stat-value">${stats.avgScore}</div>
+        <div class="stat-detail">${stats.avgVsPar >= 0 ? '+' : ''}${stats.avgVsPar} vs par · best ${stats.bestScore}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Fairways</div>
+        <div class="stat-value">${stats.fairwayPct}%</div>
+        <div class="stat-detail">${Math.round(stats.fairwaysAttempted*stats.fairwayPct/100)}/${stats.fairwaysAttempted}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">GIR</div>
+        <div class="stat-value">${stats.girPct}%</div>
+        <div class="stat-detail">${Math.round(stats.girAttempts*stats.girPct/100)}/${stats.girAttempts}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Putts / round</div>
+        <div class="stat-value">${stats.avgPutts}</div>
+        <div class="stat-detail">Per 18 holes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Scrambling</div>
+        <div class="stat-value">${stats.scramblePct}%</div>
+        <div class="stat-detail">Saving par from off-green</div>
+      </div>
+      ${stats.sandSaveAttempts > 0 ? `
+      <div class="stat-card">
+        <div class="stat-label">Sand saves</div>
+        <div class="stat-value">${stats.sandSavePct}%</div>
+        <div class="stat-detail">${stats.sandSaveSuccess}/${stats.sandSaveAttempts} · ${stats.bunkersPerRound}/round</div>
+      </div>
+      ` : ''}
+      ${stats.driveRoundsLogged > 0 ? `
+      <div class="stat-card ${stats.avgDriveDelta < 0 ? 'drive-behind' : stats.avgDriveDelta > 0 ? 'drive-ahead' : ''}">
+        <div class="stat-label">Drive gap (peers)</div>
+        <div class="stat-value">${stats.avgDriveDelta > 0 ? '+' : ''}${stats.avgDriveDelta}<span style="font-size:14px; opacity:0.6; font-weight:600;"> yds</span></div>
+        <div class="stat-detail">Avg of ${stats.driveRoundsLogged} round${stats.driveRoundsLogged === 1 ? '' : 's'}${stats.avgDriveYds ? ` · own avg ${stats.avgDriveYds}y` : ''}</div>
+      </div>
+      ` : ''}
+    </div>
+
+    ${last10.length >= 2 ? renderTrendChart(last10) : ''}
+    ${stats.driveDeltas.length >= 3 ? renderDriveTrend(stats.driveDeltas) : ''}
+    ${renderMissPattern('Tee misses', stats.teeMisses)}
+    ${renderMissPattern('Approach misses', stats.approachMisses)}
+    ${renderPuttMisses(stats.puttMissCounts)}
+    ${renderSGStyle(stats)}
+
+    <div class="viz-section">
+      <div class="viz-title">NCAA benchmarks</div>
+      <div class="viz-sub">Where elite golf lives</div>
+      <div class="detail-stat"><span class="detail-label">D1 women scoring avg</span><span class="detail-value">74–77</span></div>
+      <div class="detail-stat"><span class="detail-label">Top AJGA juniors</span><span class="detail-value">72–76</span></div>
+      <div class="detail-stat"><span class="detail-label">Elite D1 GIR</span><span class="detail-value">65%+</span></div>
+      <div class="detail-stat"><span class="detail-label">Elite D1 putts/round</span><span class="detail-value">29–31</span></div>
+    </div>
+
+    <div class="viz-section send-to-dad">
+      <div class="viz-title">📤 Send to Dad</div>
+      <div class="viz-sub">Share your data so he can help build new features</div>
+      <p style="font-size:13px; color:var(--ink-soft); margin:12px 0; line-height:1.5;">
+        Bundles your rounds plus a readable summary. Dad takes the file to Claude and they make the app better based on what's actually happening in your game.
+      </p>
+      <textarea id="send-to-bobby-msg" class="notes-input" placeholder="Optional: tell Dad what's on your mind — what's working, what's frustrating, what to focus on..." style="margin-bottom:10px; min-height:60px;"></textarea>
+      <button class="export-btn primary full" onclick="sendToBobby()">Send to Dad</button>
+    </div>
+
+    <div class="viz-section backup-section ${backupStatus().urgent ? 'urgent' : ''}">
+      <div class="viz-title">${backupStatus().urgent ? '⚠ Back up your data' : 'Data backup'}</div>
+      <div class="viz-sub">${backupStatus().text || 'No rounds to back up yet'}</div>
+      <p style="font-size:13px; color:var(--ink-soft); margin:12px 0; line-height:1.5;">
+        Your data lives only on this phone. Lose the phone, lose the data. Back up monthly: tap below, then AirDrop or email the file to yourself.
+      </p>
+      <div class="export-grid">
+        <button class="export-btn primary" onclick="exportJSON()">Back up (JSON)</button>
+        <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="export-btn full" onclick="triggerImport()">Restore from backup</button>
+      </div>
+    </div>
+
+    <div style="margin-top:32px; padding-top:24px; border-top:1px dashed var(--rule); text-align:center;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-faint); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px;">Bobby · Demo / reset</div>
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="demo-btn" onclick="loadDemoData()">Load demo data</button>
+        <button class="clear-btn" onclick="clearAllData()">Clear all data</button>
+      </div>
+      <div style="font-size:11px; color:var(--ink-faint); margin-top:10px; font-style:italic; max-width:280px; margin-left:auto; margin-right:auto;">"Load demo" adds 12 fake rounds for testing. "Clear all" wipes everything. Use both as needed — McKenzie's installed app won't have this section visible if you delete these buttons before sharing.</div>
+    </div>
+  `;
+}
+
+function renderDriveTrend(driveDeltas) {
+  // Sort chronologically
+  const sorted = driveDeltas.slice().sort((a,b) => new Date(a.date) - new Date(b.date));
+  const deltas = sorted.map(d => d.delta);
+  const max = Math.max(...deltas, 5);
+  const min = Math.min(...deltas, -5);
+  const absMax = Math.max(Math.abs(max), Math.abs(min), 10);
+  const range = absMax * 2;
+  const w = 320, h = 110, pad = 12;
+  const step = deltas.length === 1 ? 0 : (w - pad*2) / (deltas.length - 1);
+  const zeroY = h / 2;
+
+  const points = deltas.map((d, i) => {
+    const x = pad + i * step;
+    const y = zeroY - (d / absMax) * (h/2 - pad);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const avg = deltas.reduce((s,v)=>s+v,0) / deltas.length;
+  const trend = deltas[deltas.length-1] - deltas[0];
+  const trendText = trend > 3 ? '↑ Gap closing' : trend < -3 ? '↓ Gap widening' : '→ Steady';
+  const trendColor = trend > 3 ? '#1a3d2e' : trend < -3 ? '#c4452e' : '#6a7570';
+
+  return `
+    <div class="viz-section">
+      <div class="viz-title">Driving gap · ${deltas.length} round${deltas.length === 1 ? '' : 's'} logged</div>
+      <div class="viz-sub" style="color:${trendColor};">${trendText} · avg ${avg > 0 ? '+' : ''}${Math.round(avg)} yds vs peers</div>
+      <svg class="trend-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="rgba(0,0,0,0.2)" stroke-dasharray="2,3"/>
+        <text x="${pad+2}" y="${zeroY-3}" font-family="JetBrains Mono" font-size="9" fill="rgba(0,0,0,0.4)">EVEN</text>
+        <polyline points="${points}" fill="none" stroke="${trendColor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${deltas.map((d, i) => {
+          const x = pad + i * step;
+          const y = zeroY - (d / absMax) * (h/2 - pad);
+          const fill = d < 0 ? '#c4452e' : d === 0 ? '#6a7570' : '#1a3d2e';
+          return `<circle cx="${x}" cy="${y}" r="3.5" fill="${fill}"/>`;
+        }).join('')}
+      </svg>
+      <div style="font-size:11px; color:var(--ink-faint); margin-top:8px; font-style:italic; line-height:1.4;">Recruiting coaches care about this trend. Closing the gap over time tells a stronger story than absolute distance.</div>
+    </div>`;
+}
+
+function renderTrendChart(rounds) {
+  const scores = rounds.map(r => totalScore(r) - totalPar(r));
+  const max = Math.max(...scores, 1);
+  const min = Math.min(...scores, -1);
+  const range = Math.max(max - min, 1);
+  const w = 320, h = 100, pad = 12;
+  const step = (w - pad*2) / (scores.length - 1);
+  const zeroY = h - pad - ((0 - min) / range) * (h - pad*2);
+  const points = scores.map((s, i) => {
+    const x = pad + i * step;
+    const y = h - pad - ((s - min) / range) * (h - pad*2);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const trend = scores[scores.length-1] - scores[0];
+  const trendText = trend < 0 ? '↓ Improving' : trend > 0 ? '↑ Trending up' : '→ Steady';
+
+  return `
+    <div class="viz-section">
+      <div class="viz-title">Score trend · last ${rounds.length}</div>
+      <div class="viz-sub">${trendText} · vs par</div>
+      <svg class="trend-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="rgba(0,0,0,0.1)" stroke-dasharray="2,3"/>
+        <polyline points="${points}" fill="none" stroke="#1a3d2e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${scores.map((s, i) => {
+          const x = pad + i * step;
+          const y = h - pad - ((s - min) / range) * (h - pad*2);
+          const fill = s < 0 ? '#c4452e' : s === 0 ? '#f5c842' : '#1a3d2e';
+          return `<circle cx="${x}" cy="${y}" r="3" fill="${fill}"/>`;
+        }).join('')}
+      </svg>
+    </div>`;
+}
+
+function renderMissPattern(title, misses) {
+  const total = Object.values(misses).reduce((s, v) => s + v, 0);
+  if (total === 0) return '';
+
+  const cx = 70, cy = 70, rOuter = 60, rInner = 25;
+  const segments = [];
+  const labels = { left:'Left', right:'Right', wayLeft:'Way L', wayRight:'Way R', short:'Short', long:'Long', chunked:'Chunk', thinned:'Thin', penalty:'Penalty' };
+  const positions = {
+    left:    { angle: 270, color: '#c4452e' },
+    right:   { angle: 90,  color: '#c4452e' },
+    wayLeft: { angle: 225, color: '#8a2818' },
+    wayRight:{ angle: 135, color: '#8a2818' },
+    short:   { angle: 180, color: '#d4a832' },
+    long:    { angle: 0,   color: '#d4a832' },
+    chunked: { angle: 200, color: '#6a4520' },
+    thinned: { angle: 340, color: '#6a4520' },
+    penalty: { angle: 270, color: '#000' }
+  };
+
+  // Build SVG segments
+  const sortedKeys = Object.keys(misses).filter(k => misses[k] > 0).sort((a,b) => misses[b] - misses[a]);
+
+  return `
+    <div class="viz-section">
+      <div class="viz-title">${title} pattern</div>
+      <div class="viz-sub">Where ${total} misses went</div>
+      <div class="wheel-wrap">
+        <svg class="wheel-svg" viewBox="0 0 140 140">
+          ${renderRosePetals(misses, positions, cx, cy, rOuter, rInner)}
+          <circle cx="${cx}" cy="${cy}" r="${rInner}" fill="var(--sand)" stroke="var(--rule)" stroke-width="1"/>
+          <text x="${cx}" y="${cy+5}" text-anchor="middle" font-family="JetBrains Mono" font-size="14" font-weight="700" fill="#1a3d2e">${total}</text>
+        </svg>
+        <div class="wheel-legend">
+          ${sortedKeys.map(k => `
+            <div class="wheel-row">
+              <span>${labels[k]||k}</span>
+              <span>${misses[k]} · ${Math.round(misses[k]/total*100)}%</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderRosePetals(misses, positions, cx, cy, rOuter, rInner) {
+  const max = Math.max(...Object.values(misses));
+  return Object.keys(misses).filter(k => misses[k] > 0).map(k => {
+    const pos = positions[k];
+    if (!pos) return '';
+    const size = rInner + (rOuter - rInner) * (misses[k] / max);
+    const angleRad = (pos.angle - 90) * Math.PI / 180;
+    const x = cx + Math.cos(angleRad) * size;
+    const y = cy + Math.sin(angleRad) * size;
+    return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${pos.color}" stroke-width="14" stroke-linecap="round" opacity="0.75"/>`;
+  }).join('');
+}
+
+function renderPuttMisses(puttMisses) {
+  const total = Object.values(puttMisses).reduce((s,v)=>s+v, 0);
+  if (total === 0) return '';
+  const labels = { left:'Left', right:'Right', short:'Short', long:'Long', lipped:'Lipped' };
+  const max = Math.max(...Object.values(puttMisses));
+  return `
+    <div class="viz-section">
+      <div class="viz-title">Putt miss tendencies</div>
+      <div class="viz-sub">Where ${total} missed putts went</div>
+      ${Object.keys(puttMisses).filter(k => puttMisses[k] > 0).sort((a,b) => puttMisses[b]-puttMisses[a]).map(k => {
+        const pct = max ? Math.round(puttMisses[k]/max*100) : 0;
+        return `
+          <div class="sg-row">
+            <div class="sg-label">${labels[k]}</div>
+            <div class="sg-bar-wrap"><div class="sg-bar" style="width:${pct}%"></div></div>
+            <div class="sg-value">${puttMisses[k]}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderSGStyle(stats) {
+  // Compute a simple "where you're losing strokes" — relative to a baseline (good college player)
+  const baseline = { score: 74, fairwayPct: 65, girPct: 65, putts: 30, scramblePct: 55 };
+  const teeDelta = baseline.fairwayPct - stats.fairwayPct;
+  const approachDelta = baseline.girPct - stats.girPct;
+  const puttDelta = parseFloat(stats.avgPutts) - baseline.putts;
+  const shortDelta = baseline.scramblePct - stats.scramblePct;
+
+  const rows = [
+    { label: 'Tee', delta: teeDelta, unit: 'pp behind' },
+    { label: 'Approach', delta: approachDelta, unit: 'pp behind' },
+    { label: 'Short game', delta: shortDelta, unit: 'pp behind' },
+    { label: 'Putting', delta: puttDelta, unit: 'putts over' }
+  ];
+
+  const maxAbs = Math.max(...rows.map(r => Math.abs(r.delta)), 1);
+
+  return `
+    <div class="viz-section">
+      <div class="viz-title">Where you stand vs. elite</div>
+      <div class="viz-sub">Gap to top D1 college baseline · negative means you're ahead</div>
+      ${rows.map(r => {
+        const pct = Math.min(Math.abs(r.delta) / maxAbs * 100, 100);
+        const cls = r.delta > 5 ? 'bad' : r.delta > 0 ? 'warn' : 'good';
+        const sign = r.delta >= 0 ? '+' : '';
+        return `
+          <div class="sg-row">
+            <div class="sg-label">${r.label}</div>
+            <div class="sg-bar-wrap"><div class="sg-bar ${cls}" style="width:${pct}%"></div></div>
+            <div class="sg-value">${sign}${r.delta.toFixed(1)}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ============================================================
+// COACH VIEW — what should she practice next
+// ============================================================
+
+function renderCoach() {
+  const root = document.getElementById('view-coach');
+  const result = generateInsights(history);
+
+  if (!result.ready) {
+    root.innerHTML = `
+      <div class="coach-empty">
+        <div class="coach-empty-icon">🎯</div>
+        <div class="coach-empty-title">Coach is warming up</div>
+        <div class="coach-empty-sub">${result.roundsNeeded} more round${result.roundsNeeded === 1 ? '' : 's'} until I can find real patterns in your game. Insights based on 1 or 2 rounds would just be noise.</div>
+      </div>`;
+    return;
+  }
+
+  if (result.insights.length === 0) {
+    root.innerHTML = `
+      <div class="coach-empty">
+        <div class="coach-empty-icon">✓</div>
+        <div class="coach-empty-title">No clear patterns yet</div>
+        <div class="coach-empty-sub">Your misses look random — which is a good sign. Keep playing and keep tracking. As patterns emerge they'll show up here ranked by impact on score.</div>
+      </div>`;
+    return;
+  }
+
+  const completedCount = history.filter(r => r.completed).length;
+  const confidenceLabel = completedCount >= 10 ? 'High confidence' : completedCount >= 5 ? 'Building confidence' : 'Early read';
+
+  root.innerHTML = `
+    <div class="stats-header">
+      <div class="stats-sub">${confidenceLabel} · ${completedCount} rounds</div>
+      <div class="stats-title">Coach</div>
+    </div>
+
+    <div class="coach-intro">
+      <div class="coach-intro-label">Top ${result.insights.length} priorities</div>
+      <div class="coach-intro-text">
+        Ranked by how many strokes they're costing you. Fix the top one first.
+        ${completedCount < 10 ? '<br><br><strong>Read with grain of salt.</strong> Real patterns emerge at 10+ rounds. These are early reads.' : ''}
+      </div>
+    </div>
+
+    ${result.insights.map((ins, i) => {
+      const priorityClass = ins.severity >= 8 ? 'high' : ins.severity >= 5 ? 'med' : '';
+      return `
+        <div class="insight">
+          <div class="insight-priority ${priorityClass}"></div>
+          <div class="insight-header">
+            <div class="insight-area">${ins.area}</div>
+            <div class="insight-rank">#${i + 1}</div>
+          </div>
+          <div class="insight-title">${ins.title}</div>
+          <div class="insight-finding">${ins.finding}</div>
+          <div class="insight-rx">
+            <div class="insight-rx-label">Practice prescription</div>
+            <div class="insight-rx-text">${ins.prescription}</div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+
+    <div class="coach-footer">
+      Pattern analysis improves with every round. Track at least 10 rounds before making big swing changes based on what you see here. Patterns are most reliable at 20+ rounds.
+    </div>
+  `;
+}
+
+// ============================================================
+
+function renderRounds() {
+  const root = document.getElementById('view-rounds');
+  const completed = history.filter(r => r.completed).slice().reverse();
+
+  if (!completed.length) {
+    root.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">No rounds yet</div>
+        <div class="empty-sub">Your completed rounds appear here.</div>
+      </div>`;
+    return;
+  }
+
+  root.innerHTML = `
+    <div class="stats-header">
+      <div class="stats-sub">${completed.length} completed</div>
+      <div class="stats-title">Every Round</div>
+    </div>
+    ${completed.map(r => {
+      const score = totalScore(r);
+      const par = totalPar(r);
+      const diff = score - par;
+      const diffText = diff === 0 ? 'E' : diff > 0 ? '+'+diff : ''+diff;
+      const diffClass = diff < 0 ? 'under' : 'over';
+      const d = new Date(r.date);
+      const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      return `
+        <div class="round-item" onclick="showRoundDetail('${r.id}')">
+          <div class="round-info-block">
+            <div class="round-course">${escapeHtml(r.course || 'Unnamed')}</div>
+            <div class="round-date">${dateStr}</div>
+          </div>
+          <div class="round-score">
+            <div class="round-score-num">${score}</div>
+            <div class="round-score-par ${diffClass}">${diffText}</div>
+          </div>
+        </div>`;
+    }).join('')}
+  `;
+}
+
+function getLastRoundLabel() {
+  const completed = history.filter(r=>r.completed);
+  if (!completed.length) return '';
+  const last = completed[completed.length-1];
+  return `${totalScore(last)} at ${last.course || 'Unnamed'}`;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+
+function switchView(view) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+  if (view === 'play') renderPlay();
+  if (view === 'stats') renderStats();
+  if (view === 'coach') renderCoach();
+  if (view === 'rounds') renderRounds();
+}
+
+async function startRound(courseId) {
+  activeRound = newRound(courseId);
+  currentHole = 1;
+  await storageSet(STORAGE_KEY_ACTIVE, JSON.stringify(activeRound));
+  renderPlay();
+}
+
+function navHole(dir) {
+  const next = currentHole + dir;
+  if (next < 1 || next > 18) return;
+  currentHole = next;
+  renderPlay();
+}
+
+function setPar(p) {
+  const hole = activeRound.holes[currentHole - 1];
+  hole.par = p;
+  if (p === 3) hole.tee = null;
+  debouncedSave();
+  renderPlay();
+}
+
+async function resyncCoursePars() {
+  if (!activeRound || !activeRound.courseId) {
+    showToast('No course library linked to this round');
+    return;
+  }
+  const course = COURSE_LIBRARY[activeRound.courseId];
+  if (!course) return;
+  let changed = 0;
+  activeRound.holes.forEach((h, i) => {
+    const libHole = course.holes.find(lh => lh.num === i + 1);
+    if (libHole && h.par !== libHole.par) {
+      h.par = libHole.par;
+      changed++;
+    }
+  });
+  await storageSet(STORAGE_KEY_ACTIVE, JSON.stringify(activeRound));
+  showToast(changed ? `Updated ${changed} hole par${changed === 1 ? '' : 's'}` : 'All pars already correct');
+  renderPlay();
+}
+
+async function linkCourseToRound(courseId) {
+  if (!activeRound) return;
+  const course = COURSE_LIBRARY[courseId];
+  if (!course) return;
+  // Link the round to the course
+  activeRound.courseId = courseId;
+  activeRound.course = course.name;
+  const teeData = course.tees[0];
+  if (teeData) {
+    activeRound.courseRating = teeData.rating;
+    activeRound.slope = teeData.slope;
+    activeRound.tees = teeData.name;
+  }
+  // Sync hole pars
+  let parsChanged = 0;
+  activeRound.holes.forEach((h, i) => {
+    const libHole = course.holes.find(lh => lh.num === i + 1);
+    if (libHole && h.par !== libHole.par) {
+      h.par = libHole.par;
+      parsChanged++;
+    }
+  });
+  await storageSet(STORAGE_KEY_ACTIVE, JSON.stringify(activeRound));
+  hideModal();
+  showToast(`Linked to ${course.name}${parsChanged ? ` · ${parsChanged} pars updated` : ''}`);
+  renderPlay();
+}
+
+function chooseCourseToLink() {
+  const courses = Object.values(COURSE_LIBRARY);
+  document.getElementById('modal-title').textContent = 'Link to course library';
+  document.getElementById('modal-text').innerHTML = `
+    <div style="font-size:14px; color:var(--ink-soft); line-height:1.5; margin-bottom:14px;">
+      Pick the course you're playing. This will load the official pars, course rating, and slope into your round. Your shot data stays.
+    </div>
+    ${courses.map(c => `
+      <button class="course-pick-btn" onclick="linkCourseToRound('${c.id}')" style="display:block; width:100%; margin-bottom:8px;">
+        <div class="course-pick-name">${c.name}</div>
+        <div class="course-pick-detail">${c.location} · Par ${c.par}</div>
+      </button>
+    `).join('')}
+  `;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn secondary" onclick="hideModal()">Cancel</button>
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+
+function adjScore(delta) {
+  const hole = activeRound.holes[currentHole - 1];
+  // If not yet in override mode, switch to it first
+  if (!hole.scoreOverride) {
+    hole.scoreOverride = true;
+    if (hole.score === null || hole.score === undefined) hole.score = computeHoleScore(hole) || hole.par;
+  }
+  hole.score = Math.max(1, Math.min(15, hole.score + delta));
+  debouncedSave();
+  renderPlay();
+}
+
+function editStrategy(holeNum) {
+  if (!activeRound || !activeRound.courseId) return;
+  const courseId = activeRound.courseId;
+  const current = getHoleStrategy(courseId, holeNum) || '';
+  const courseName = COURSE_LIBRARY[courseId].name;
+
+  document.getElementById('modal-title').textContent = `${courseName} · Hole ${holeNum}`;
+  document.getElementById('modal-text').innerHTML = `
+    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-faint); margin-bottom:10px;">Strategy note</div>
+    <textarea id="strategy-edit-input" style="width:100%; min-height:140px; padding:12px; border:1.5px solid var(--rule); border-radius:10px; font-family:'Bricolage Grotesque',sans-serif; font-size:14px; color:var(--ink); -webkit-user-select:text; user-select:text; outline:none; resize:vertical;">${escapeHtml(current)}</textarea>
+    <div style="font-size:12px; color:var(--ink-faint); margin-top:8px; font-style:italic; line-height:1.4;">Edit based on how you actually play this hole. Save your insights for next time.</div>
+  `;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn secondary" onclick="hideModal()">Cancel</button>
+    <button class="modal-btn primary" onclick="saveStrategyEdit(${holeNum})">Save</button>
+  `;
+  document.getElementById('modal').classList.add('show');
+  setTimeout(() => document.getElementById('strategy-edit-input').focus(), 100);
+}
+
+async function saveStrategyEdit(holeNum) {
+  const input = document.getElementById('strategy-edit-input');
+  if (!input) return;
+  const note = input.value.trim();
+  await saveCourseNote(activeRound ? activeRound.courseId : currentPracticeCourse, holeNum, note);
+  hideModal();
+  showToast('Strategy saved');
+  if (activeRound) renderPlay();
+  else if (currentPracticeCourse) openPractice(currentPracticeCourse);
+}
+
+let currentPracticeCourse = null;
+
+function openPractice(courseId) {
+  currentPracticeCourse = courseId;
+  const course = COURSE_LIBRARY[courseId];
+  if (!course) return;
+
+  const holesHtml = course.holes.map(h => {
+    const strat = getHoleStrategy(courseId, h.num);
+    const isEdited = courseNoteOverrides[courseId] && courseNoteOverrides[courseId][h.num] !== undefined;
+    return `
+      <div class="practice-hole">
+        <div class="practice-hole-header">
+          <div class="practice-hole-num">
+            <span class="practice-hole-big">${h.num}</span>
+            <span class="practice-hole-par">Par ${h.par}</span>
+          </div>
+          <div class="practice-hole-meta">
+            <span>${h.yds}y</span>
+            <span class="practice-hole-hcp">Hcp ${h.hcp}</span>
+            ${isEdited ? '<span class="practice-edited">edited</span>' : ''}
+          </div>
+        </div>
+        <div class="practice-hole-strategy">${escapeHtml(strat || '')}</div>
+        <button class="strategy-edit-btn" onclick="editStrategyPractice(${h.num})" style="margin-top:8px;">Edit</button>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('modal-title').textContent = course.name;
+  document.getElementById('modal-text').innerHTML = `
+    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-faint); margin-bottom:6px;">Practice mode · all 18 holes</div>
+    <div style="font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:14px;">${course.character}</div>
+    <div style="background:var(--sand); border-radius:10px; padding:12px; margin-bottom:18px;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; font-weight:700;">Course keys</div>
+      ${course.keys.map(k => `<div style="font-size:13px; color:var(--ink-soft); padding:4px 0; line-height:1.4;">· ${k}</div>`).join('')}
+    </div>
+    <div style="max-height:400px; overflow-y:auto;">${holesHtml}</div>
+  `;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn primary" onclick="closePractice()">Close</button>
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closePractice() {
+  currentPracticeCourse = null;
+  hideModal();
+}
+
+function editStrategyPractice(holeNum) {
+  if (!currentPracticeCourse) return;
+  const courseId = currentPracticeCourse;
+  const current = getHoleStrategy(courseId, holeNum) || '';
+  const courseName = COURSE_LIBRARY[courseId].name;
+
+  document.getElementById('modal-title').textContent = `${courseName} · Hole ${holeNum}`;
+  document.getElementById('modal-text').innerHTML = `
+    <div style="font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-faint); margin-bottom:10px;">Strategy note</div>
+    <textarea id="strategy-edit-input" style="width:100%; min-height:140px; padding:12px; border:1.5px solid var(--rule); border-radius:10px; font-family:'Bricolage Grotesque',sans-serif; font-size:14px; color:var(--ink); -webkit-user-select:text; user-select:text; outline:none; resize:vertical;">${escapeHtml(current)}</textarea>
+    <div style="font-size:12px; color:var(--ink-faint); margin-top:8px; font-style:italic; line-height:1.4;">Refine the strategy as McKenzie learns this hole.</div>
+  `;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn secondary" onclick="openPractice('${courseId}')">Cancel</button>
+    <button class="modal-btn primary" onclick="savePracticeStrategyEdit(${holeNum})">Save</button>
+  `;
+  setTimeout(() => document.getElementById('strategy-edit-input').focus(), 100);
+}
+
+async function savePracticeStrategyEdit(holeNum) {
+  const input = document.getElementById('strategy-edit-input');
+  if (!input) return;
+  const note = input.value.trim();
+  await saveCourseNote(currentPracticeCourse, holeNum, note);
+  showToast('Strategy saved');
+  openPractice(currentPracticeCourse);  // re-open with updated note
+}
+
+function toggleScoreOverride() {
+  const hole = activeRound.holes[currentHole - 1];
+  if (hole.scoreOverride) {
+    // Switch back to auto
+    hole.scoreOverride = false;
+  } else {
+    // Switch to manual; seed with current computed value
+    hole.scoreOverride = true;
+    hole.score = computeHoleScore(hole) || hole.par;
+  }
+  debouncedSave();
+  renderPlay();
+}
+
+function addRecovery() {
+  const hole = activeRound.holes[currentHole - 1];
+  if (!hole.recoveries) hole.recoveries = [];
+  // First recovery inherits the bunker flag if the approach was into a bunker
+  const isFirstAndBunker = hole.recoveries.length === 0 && hole.approachBunker;
+  hole.recoveries.push({
+    type: isFirstAndBunker ? 'bunker' : 'chip',
+    result: null,
+    bunker: isFirstAndBunker
+  });
+  debouncedSave();
+  renderPlay();
+}
+
+function setRecoveryResult(idx, result) {
+  const hole = activeRound.holes[currentHole - 1];
+  if (!hole.recoveries || !hole.recoveries[idx]) return;
+  hole.recoveries[idx].result = hole.recoveries[idx].result === result ? null : result;
+  debouncedSave();
+  renderPlay();
+}
+
+function removeRecovery(idx) {
+  const hole = activeRound.holes[currentHole - 1];
+  if (!hole.recoveries) return;
+  hole.recoveries.splice(idx, 1);
+  debouncedSave();
+  renderPlay();
+}
+
+function setField(field, value) {
+  const hole = activeRound.holes[currentHole - 1];
+  hole[field] = hole[field] === value ? null : value;
+  if (field === 'approach' && value === 'gir') {
+    hole.chip = null;
+    hole.approachBunker = false;
+    hole.recoveries = [];
+  }
+  if (field === 'tee' && (value === 'fairway' || value === 'penalty')) {
+    hole.teeBunker = false;
+  }
+  if (field === 'secondShot') {
+    if (value === 'green') {
+      // Second shot reached green — clear any approach data, mark as GIR-in-2
+      hole.approach = 'gir';
+      hole.approachBunker = false;
+      hole.chip = null;
+      hole.recoveries = [];
+    } else if (value === 'fairway' || value === 'penalty') {
+      hole.secondBunker = false;
+    }
+    // If second shot is no longer 'green', and approach was set to 'gir' from that, clear it
+    if (value !== 'green' && hole.approach === 'gir' && hole.par === 5) {
+      // Only clear if she's resetting from 'green' state — user must re-log approach
+      // Actually safer to leave it and let her decide
+    }
+  }
+  debouncedSave();
+  renderPlay();
+}
+
+function toggleField(field) {
+  const hole = activeRound.holes[currentHole - 1];
+  hole[field] = !hole[field];
+  debouncedSave();
+  renderPlay();
+}
+
+function setPutts(p) {
+  const hole = activeRound.holes[currentHole - 1];
+  hole.putts = hole.putts === p ? null : p;
+  if (hole.putts === null || hole.putts < 2) {
+    hole.puttMisses = [];
+    hole.puttDetails = [];
+  } else {
+    // Trim puttDetails if she reduced the count
+    if (!hole.puttDetails) hole.puttDetails = [];
+    if (hole.puttDetails.length > hole.putts - 1) {
+      hole.puttDetails = hole.puttDetails.slice(0, hole.putts - 1);
+    }
+  }
+  if (hole.putts === null || hole.putts === 0) {
+    hole.firstPuttDistance = null;
+  }
+  debouncedSave();
+  renderPlay();
+}
+
+function setFirstPuttDistance(d) {
+  const hole = activeRound.holes[currentHole - 1];
+  hole.firstPuttDistance = hole.firstPuttDistance === d ? null : d;
+  debouncedSave();
+  renderPlay();
+}
+
+function setHoleDriveDelta(delta) {
+  const hole = activeRound.holes[currentHole - 1];
+  hole.driveDelta = hole.driveDelta === delta ? null : delta;
+  debouncedSave();
+  renderPlay();
+}
+
+function setPuttDetail(idx, type) {
+  const hole = activeRound.holes[currentHole - 1];
+  if (!hole.puttDetails) hole.puttDetails = [];
+  while (hole.puttDetails.length <= idx) hole.puttDetails.push(null);
+  if (hole.puttDetails[idx] && hole.puttDetails[idx].type === type) {
+    hole.puttDetails[idx] = null;
+  } else {
+    hole.puttDetails[idx] = { type, distance: hole.firstPuttDistance };
+  }
+  // Also keep legacy puttMisses in sync for backwards-compat stats
+  hole.puttMisses = (hole.puttDetails || []).filter(d => d).map(d => {
+    if (d.type === 'pace-long') return 'long';
+    if (d.type === 'pace-short') return 'short';
+    if (d.type === 'line-left') return 'left';
+    if (d.type === 'line-right') return 'right';
+    if (d.type === 'lipped') return 'lipped';
+    return null;
+  }).filter(Boolean);
+  debouncedSave();
+  renderPlay();
+}
+
+function togglePuttMiss(m) {
+  // Legacy — keep for backwards compat but no longer used in new UI
+  const hole = activeRound.holes[currentHole - 1];
+  hole.puttMisses = hole.puttMisses || [];
+  const idx = hole.puttMisses.indexOf(m);
+  if (idx >= 0) hole.puttMisses.splice(idx, 1);
+  else hole.puttMisses.push(m);
+  debouncedSave();
+  renderPlay();
+}
+
+function appendNote(tag) {
+  const hole = activeRound.holes[currentHole - 1];
+  hole.notes = (hole.notes ? hole.notes + ' · ' : '') + tag.toLowerCase();
+  debouncedSave();
+  renderPlay();
+}
+
+function updateHoleNote(text) {
+  activeRound.holes[currentHole - 1].notes = text;
+  debouncedSave();
+}
+
+function confirmFinish() {
+  showModal({
+    title: 'Finish this round?',
+    text: `${holesPlayed(activeRound)} holes logged. Save to your history.`,
+    confirmText: 'Finish',
+    onConfirm: finishRound
+  });
+}
+
+async function finishRound() {
+  activeRound.completed = true;
+  activeRound.dateCompleted = new Date().toISOString();
+  history.push(activeRound);
+  await saveHistory();
+  await storageDelete(STORAGE_KEY_ACTIVE);
+  activeRound = null;
+  currentHole = 1;
+  hideModal();
+
+  // Always prompt to back up after every round.
+  // Browser storage is not durable. The only protection is a file you have a copy of.
+  setTimeout(() => {
+    showModal({
+      title: 'Back up this round',
+      text: 'Round saved on your phone. Tap "Back up" to save a copy you can AirDrop or email to yourself. Phone storage can be cleared by iOS without warning — the backup file is your safety net.',
+      confirmText: 'Back up now',
+      cancelText: 'Skip',
+      onConfirm: () => { hideModal(); exportJSON(); },
+      onCancel: () => { hideModal(); showToast('Round saved (not backed up)'); renderPlay(); }
+    });
+  }, 400);
+
+  renderPlay();
+}
+
+function showRoundDetail(id) {
+  const r = history.find(x => x.id === id);
+  if (!r) return;
+  const score = totalScore(r);
+  const par = totalPar(r);
+  const diff = score - par;
+  const diffText = diff === 0 ? 'E' : diff > 0 ? '+'+diff : ''+diff;
+  const d = new Date(r.date);
+  const dateStr = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
+  const holesHtml = r.holes.map(h => {
+    const hScore = holeScore(h);
+    const hDiff = hScore - h.par;
+    const hClr = hDiff < 0 ? '#c4452e' : hDiff === 0 ? '#1a3d2e' : '#6a7570';
+    let detail = '';
+    if (h.tee && h.tee !== 'fairway') detail += `T:${teeLabel(h.tee).toLowerCase()}${h.teeBunker ? '/bunker' : ''} · `;
+    if (h.approach && h.approach !== 'gir') detail += `A:${approachLabel(h.approach).toLowerCase()}${h.approachBunker ? '/bunker' : ''} · `;
+    if (h.recoveries && h.recoveries.length > 0) detail += `${h.recoveries.length} recov · `;
+    if (h.putts !== undefined && h.putts !== null) detail += `${h.putts}p`;
+    return `<div style="padding:8px 0; border-bottom:1px solid var(--rule); font-size:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span style="font-family:'JetBrains Mono',monospace; color:var(--ink-faint); font-size:11px;">H${h.hole} · par ${h.par}</span>
+        <span style="font-weight:700; color:${hClr}; font-size:14px;">${hScore}</span>
+      </div>
+      ${detail ? `<div style="font-size:10.5px; color:var(--ink-faint); margin-top:2px; font-family:'JetBrains Mono',monospace;">${detail}</div>` : ''}
+      ${h.notes ? `<div style="font-size:12px; color:var(--ink-soft); margin-top:2px; font-style:italic;">"${escapeHtml(h.notes)}"</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const fairways = r.holes.filter(h => h.par !== 3 && h.tee === 'fairway').length;
+  const fairwaysAtt = r.holes.filter(h => h.par !== 3 && h.tee !== null).length;
+  const girs = r.holes.filter(h => h.approach === 'gir').length;
+  const putts = r.holes.reduce((s,h) => s + (h.putts||0), 0);
+
+  document.getElementById('modal-title').textContent = r.course || 'Unnamed';
+  document.getElementById('modal-text').innerHTML = `
+    <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">${dateStr}</div>
+    <div style="display:flex; gap:18px; align-items:baseline; margin-bottom:18px;">
+      <div style="font-weight:800; font-size:44px; color:var(--fairway); letter-spacing:-0.03em;">${score}</div>
+      <div style="font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--ink-faint);">${diffText} · par ${par}</div>
+    </div>
+    <div class="detail-stat"><span class="detail-label">Fairways</span><span class="detail-value">${fairways}/${fairwaysAtt}</span></div>
+    <div class="detail-stat"><span class="detail-label">GIR</span><span class="detail-value">${girs}/18</span></div>
+    <div class="detail-stat"><span class="detail-label">Putts</span><span class="detail-value">${putts}</span></div>
+    <div style="margin-top:16px; max-height:300px; overflow-y:auto;">${holesHtml}</div>
+  `;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn danger" onclick="confirmDelete('${r.id}')">Delete</button>
+    <button class="modal-btn primary" onclick="hideModal()">Close</button>
+  `;
+  document.getElementById('modal').classList.add('show');
+}
+
+function confirmDelete(id) {
+  document.getElementById('modal-title').textContent = 'Delete this round?';
+  document.getElementById('modal-text').textContent = 'This cannot be undone.';
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn secondary" onclick="hideModal()">Cancel</button>
+    <button class="modal-btn danger" onclick="deleteRound('${id}')">Delete</button>
+  `;
+}
+
+async function deleteRound(id) {
+  history = history.filter(r => r.id !== id);
+  await saveHistory();
+  hideModal();
+  renderRounds();
+  renderStats();
+  showToast('Round deleted');
+}
+
+function showModal({ title, text, confirmText='Confirm', cancelText='Cancel', onConfirm, onCancel }) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="modal-btn secondary" id="modal-cancel-btn">${cancelText}</button>
+    <button class="modal-btn primary" id="modal-confirm-btn">${confirmText}</button>
+  `;
+  document.getElementById('modal-confirm-btn').onclick = onConfirm;
+  document.getElementById('modal-cancel-btn').onclick = onCancel || hideModal;
+  document.getElementById('modal').classList.add('show');
+}
+
+function hideModal() { document.getElementById('modal').classList.remove('show'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============================================================
+// COURSE DATABASE
+// ============================================================
+// Real scorecard data with hole-by-hole strategy notes.
+// Strategy notes are informed by course character + handicap rankings.
+// User can edit notes from within the app, and they save per-user.
+
+const STORAGE_KEY_COURSE_NOTES = 'range:course-notes';
+let courseNoteOverrides = {};  // { courseId: { holeNum: noteText } }
+
+const COURSE_LIBRARY = {
+  'pala-mesa': {
+    id: 'pala-mesa',
+    name: 'Pala Mesa Resort',
+    location: 'Fallbrook, CA',
+    architect: 'William H. Johnson (1961)',
+    par: 72,
+    tees: [
+      { name: 'Black', yards: 6502, rating: 72.1, slope: 128 },
+      { name: 'Blue',  yards: 6131, rating: 70.5, slope: 124 },
+      { name: 'Silver', yards: 5632, rating: 68.2, slope: 118 },
+      { name: 'Gold',   yards: 5096, rating: 65.9, slope: 112 }
+    ],
+    character: 'Carved from rolling hillsides. Tight, tree-lined fairways (oaks, sycamores, elms). Fast, undulating greens. Front nine more intimate and challenging; back nine visually wider. Greens hold a low-running shot well.',
+    keys: [
+      'Greens are small and break subtly — read twice on anything outside 10 feet',
+      'Greens are fast — better to leave the long putt short than blast past',
+      'Front nine fairways are tight. Take less club off the tee on holes 1, 3, 4',
+      'Trees come into play often. Punch-out and play for bogey is sometimes the right answer'
+    ],
+    holes: [
+      { num: 1,  par: 4, yds: 407, hcp: 3,  strategy: 'Tough opening hole — #3 handicap. Tight tree-lined fairway. Hit fairway over distance. A 230y tee shot in fairway is worth more than 270y in trees. Mid-iron approach to a small green — aim center, let the subtle break do the work.' },
+      { num: 2,  par: 5, yds: 473, hcp: 17, strategy: 'Birdie hole — #17 handicap, shortest par 5. Reachable in 2 for longer hitters with a good drive. From rough, lay up to your favorite wedge yardage (90–110y). Pin position matters: back pins easy to run by.' },
+      { num: 3,  par: 4, yds: 396, hcp: 1,  strategy: 'Hardest hole on the course. Long par 4 with the tightest fairway on the front. Driver only if you trust it — 3-wood plays plenty. Long iron in to a small green. Par here is a great score.' },
+      { num: 4,  par: 3, yds: 189, hcp: 9,  strategy: 'Mid-length par 3. Choose club for the actual pin yardage, not the marker. Greens are small — short is usually safer than long. Bunker miss is recoverable, OB or trees is not.' },
+      { num: 5,  par: 4, yds: 312, hcp: 15, strategy: 'Short par 4 — wedge in for the average player. Tempting to drive but trees punish a miss. 4i/hybrid off the tee to 100y, then dial in a wedge. Birdie chance with smart play.' },
+      { num: 6,  par: 4, yds: 397, hcp: 7,  strategy: 'Mid-length par 4. Position over power off the tee. Approach is what matters — small green, prefer being short and putting up than long and putting down.' },
+      { num: 7,  par: 3, yds: 183, hcp: 13, strategy: 'Mid-iron par 3. Trust your number. Aim center even on tucked pins — the small green doesn\'t leave much margin for chasing flags.' },
+      { num: 8,  par: 5, yds: 525, hcp: 11, strategy: 'Long par 5 — true 3-shot hole for most. Tee shot to fairway is the only thing that matters. Lay up to a comfortable wedge distance. Greens are firm, low approach skips and stops.' },
+      { num: 9,  par: 4, yds: 418, hcp: 5,  strategy: 'Long par 4 closing the front. Need a good tee shot to have a mid-iron in. Take an extra club on approach — uphill or wind often plays. Par is great.' },
+      { num: 10, par: 5, yds: 480, hcp: 8,  strategy: 'Short par 5 — eagle look with a good drive. Back 9 fairways are wider — be aggressive. From rough, lay up; from fairway, go for it with confidence.' },
+      { num: 11, par: 4, yds: 304, hcp: 14, strategy: 'Drivable for long hitters, easy wedge-in for everyone else. Position your tee shot to your favorite yardage. Don\'t force driver — bogey here from trouble undoes any birdie on 10.' },
+      { num: 12, par: 5, yds: 501, hcp: 12, strategy: 'Mid-length par 5. Strong tee shot opens up a go-for-it second. Otherwise lay up. Greens here can be tricky — read carefully.' },
+      { num: 13, par: 4, yds: 403, hcp: 4,  strategy: '#4 handicap on the course. Long par 4 demanding both distance and accuracy. A par here is a stroke gained on the field.' },
+      { num: 14, par: 3, yds: 173, hcp: 16, strategy: 'Easier par 3 — #16 handicap. Mid-short iron. Aim center, two-putt par. Don\'t shortside yourself chasing a pin.' },
+      { num: 15, par: 4, yds: 416, hcp: 2,  strategy: '#2 handicap. Long par 4 — needs your best drive of the day. Don\'t press it; tempo over power. Par is excellent.' },
+      { num: 16, par: 3, yds: 155, hcp: 18, strategy: 'Shortest par 3 — easiest hole on the course on paper. Don\'t let that fool you — small green, fast surface. Stay below the hole.' },
+      { num: 17, par: 4, yds: 351, hcp: 10, strategy: 'Mid-length par 4 with a birdie chance for the well-placed drive. Smart play: hit your reliable club off the tee, get to wedge distance.' },
+      { num: 18, par: 4, yds: 419, hcp: 6,  strategy: 'Finishing par 4 — long and demanding. Hit fairway, hit green, two-putt for a strong finish. Don\'t bail right or you\'re short-siding.' }
+    ]
+  }
+};
+
+async function loadCourseNotes() {
+  const stored = await storageGet(STORAGE_KEY_COURSE_NOTES);
+  if (stored) try { courseNoteOverrides = JSON.parse(stored); } catch(e) {}
+}
+
+async function saveCourseNote(courseId, holeNum, note) {
+  if (!courseNoteOverrides[courseId]) courseNoteOverrides[courseId] = {};
+  courseNoteOverrides[courseId][holeNum] = note;
+  await storageSet(STORAGE_KEY_COURSE_NOTES, JSON.stringify(courseNoteOverrides));
+}
+
+function getHoleStrategy(courseId, holeNum) {
+  // User edits override library
+  if (courseNoteOverrides[courseId] && courseNoteOverrides[courseId][holeNum] !== undefined) {
+    return courseNoteOverrides[courseId][holeNum];
+  }
+  const course = COURSE_LIBRARY[courseId];
+  if (!course) return null;
+  const hole = course.holes.find(h => h.num === holeNum);
+  return hole ? hole.strategy : null;
+}
+
+// ============================================================
+// DEMO MODE — generates realistic data for testing the app
+// ============================================================
+
+function generateDemoData() {
+  const courses = [
+    { name: 'Bear\'s Best Las Vegas', cr: 73.8, slope: 137, tees: 'Championship' },
+    { name: 'TPC Summerlin', cr: 73.4, slope: 135, tees: 'Blue' },
+    { name: 'Shadow Creek', cr: 75.2, slope: 142, tees: 'Tournament' },
+    { name: 'Reflection Bay', cr: 72.6, slope: 132, tees: 'Blue' },
+    { name: 'Cascata', cr: 74.1, slope: 138, tees: 'Championship' },
+    { name: 'Wynn Golf Club', cr: 72.8, slope: 131, tees: 'White' },
+    { name: 'Paiute Sun Mountain', cr: 71.9, slope: 128, tees: 'Blue' },
+    { name: 'Rio Secco', cr: 73.5, slope: 136, tees: 'Championship' }
+  ];
+
+  const courseNotes = ['Wind on back 9', 'Rained briefly', 'Tournament round', 'Practice round', 'Fast greens', 'New irons', '', '', '', ''];
+
+  // McKenzie's underlying pattern (so the Coach tab finds real insights):
+  // - Tends to miss approach shots SHORT and slightly LEFT
+  // - Putts come up SHORT more than long (cautious putter)
+  // - Tee shots reasonable but slight right miss tendency
+  // - Decent scrambling but inconsistent
+
+  function rollMiss(weights) {
+    const total = weights.reduce((s, w) => s + w[1], 0);
+    let r = Math.random() * total;
+    for (const [val, w] of weights) {
+      r -= w;
+      if (r <= 0) return val;
+    }
+    return weights[0][0];
+  }
+
+  function generateRound(daysAgo, course, scoreBias) {
+    // scoreBias: lower = better day, higher = worse day, 0 = average
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+
+    const round = {
+      id: 'r_demo_' + (Date.now() - daysAgo * 86400000) + '_' + Math.floor(Math.random() * 1000),
+      course: course.name,
+      tees: course.tees,
+      courseRating: course.cr,
+      slope: course.slope,
+      date: date.toISOString(),
+      completed: true,
+      dateCompleted: date.toISOString(),
+      finalNotes: courseNotes[Math.floor(Math.random() * courseNotes.length)],
+      holes: []
+    };
+
+    // 18 holes — typical par 72 layout
+    const pars = [4,5,4,3,4,4,5,3,4,4,4,5,3,4,4,4,3,5];
+
+    pars.forEach((par, i) => {
+      const hole = {
+        hole: i + 1,
+        par: par,
+        score: par,
+        tee: null,
+        approach: null,
+        chip: null,
+        putts: 2,
+        puttMisses: [],
+        puttDetails: [],
+        firstPuttDistance: null,
+        penalties: 0,
+        notes: ''
+      };
+
+      // TEE SHOT (par 4 and 5 only)
+      if (par >= 4) {
+        const teeRoll = Math.random() + scoreBias * 0.1;
+        if (teeRoll < 0.58) hole.tee = 'fairway';
+        else if (teeRoll < 0.70) hole.tee = 'right';
+        else if (teeRoll < 0.80) hole.tee = 'left';
+        else if (teeRoll < 0.86) hole.tee = 'wayRight';
+        else if (teeRoll < 0.92) hole.tee = 'wayLeft';
+        else { hole.tee = 'penalty'; hole.penalties = 1; }
+        if (hole.tee && hole.tee !== 'fairway' && hole.tee !== 'penalty' && Math.random() < 0.2) {
+          hole.teeBunker = true;
+        }
+      }
+
+      // SECOND SHOT (par 5 only) — depends on tee shot quality
+      let secondShotReachedGreen = false;
+      if (par === 5) {
+        const fromFairway = hole.tee === 'fairway';
+        const secondRoll = Math.random() + scoreBias * 0.1;
+        // From fairway: 15% reach green in 2, 65% lay up to fairway, rest miss
+        // From rough: 5% reach green, 55% recover to fairway, rest miss
+        const greenChance = fromFairway ? 0.15 : 0.05;
+        const fairwayChance = fromFairway ? 0.80 : 0.60;
+
+        if (secondRoll < greenChance) {
+          hole.secondShot = 'green';
+          secondShotReachedGreen = true;
+          hole.approach = 'gir'; // Reaching green in 2 = GIR
+        } else if (secondRoll < fairwayChance) {
+          hole.secondShot = 'fairway';
+        } else if (secondRoll < fairwayChance + 0.06) hole.secondShot = 'short';
+        else if (secondRoll < fairwayChance + 0.12) hole.secondShot = 'right';
+        else if (secondRoll < fairwayChance + 0.16) hole.secondShot = 'left';
+        else if (secondRoll < fairwayChance + 0.19) hole.secondShot = 'chunked';
+        else hole.secondShot = 'thinned';
+      }
+
+      // APPROACH — par 3 and 4, OR par 5 not reached in 2
+      let gir = false;
+      if (!secondShotReachedGreen) {
+        const approachRoll = Math.random() + scoreBias * 0.15;
+        if (approachRoll < 0.48) { hole.approach = 'gir'; gir = true; }
+        else if (approachRoll < 0.70) hole.approach = 'short';
+        else if (approachRoll < 0.80) hole.approach = 'left';
+        else if (approachRoll < 0.86) hole.approach = 'right';
+        else if (approachRoll < 0.90) hole.approach = 'long';
+        else if (approachRoll < 0.95) hole.approach = 'chunked';
+        else hole.approach = 'thinned';
+        if (!gir && hole.approach !== 'chunked' && hole.approach !== 'thinned') {
+          const bunkerChance = hole.approach === 'short' ? 0.30 : 0.22;
+          if (Math.random() < bunkerChance) hole.approachBunker = true;
+        }
+      } else {
+        gir = true;
+      }
+
+      // CHIP — if missed green
+      if (!gir) {
+        const chipRoll = Math.random() + scoreBias * 0.1;
+        if (chipRoll < 0.06) hole.chip = 'holed';
+        else if (chipRoll < 0.40) hole.chip = 'good';     // 6 ft
+        else if (chipRoll < 0.70) hole.chip = 'okay';     // 6-15 ft
+        else if (chipRoll < 0.88) hole.chip = 'poor';
+        else hole.chip = 'mishit';
+      }
+
+      // PUTTS — short bias for first putt distance
+      let firstPuttDist = gir ? 'mid' : (hole.chip === 'good' ? 'short' : hole.chip === 'holed' ? 'in' : 'long');
+      let putts = 2;
+      const puttMisses = [];
+
+      if (firstPuttDist === 'in') {
+        putts = 0;
+      } else if (firstPuttDist === 'short') {
+        // 6 ft putt
+        const r = Math.random();
+        if (r < 0.55) putts = 1;
+        else { putts = 2; puttMisses.push(rollMiss([['right', 0.3], ['left', 0.3], ['short', 0.4]])); }
+      } else if (firstPuttDist === 'mid') {
+        // 20 ft putt
+        const r = Math.random();
+        if (r < 0.12) putts = 1;
+        else if (r < 0.78) { putts = 2; puttMisses.push(rollMiss([['short', 0.45], ['right', 0.25], ['left', 0.20], ['lipped', 0.10]])); }
+        else { putts = 3; puttMisses.push('short'); puttMisses.push(rollMiss([['right', 0.5], ['left', 0.5]])); }
+      } else {
+        // long putt
+        const r = Math.random();
+        if (r < 0.04) putts = 1;
+        else if (r < 0.65) { putts = 2; puttMisses.push(rollMiss([['short', 0.5], ['long', 0.2], ['right', 0.15], ['left', 0.15]])); }
+        else { putts = 3; puttMisses.push('short'); puttMisses.push(rollMiss([['short', 0.3], ['right', 0.35], ['left', 0.35]])); }
+      }
+
+      hole.putts = putts;
+      hole.puttMisses = puttMisses;
+
+      // SCORE — back into it from the data
+      // base = par + offsets
+      let score = par;
+      if (!gir) {
+        if (hole.chip === 'holed') {
+          score = par;  // chip-in saves par on bogey path
+        } else if (hole.chip === 'good' && putts === 1) {
+          score = par;  // up & down
+        } else if (hole.chip === 'good') {
+          score = par + 1;
+        } else if (hole.chip === 'okay') {
+          score = par + 1 + (putts > 2 ? 1 : 0);
+        } else if (hole.chip === 'poor') {
+          score = par + 1 + (putts >= 2 ? 1 : 0);
+        } else if (hole.chip === 'mishit') {
+          score = par + 2;
+        } else {
+          score = par + putts - 1;
+        }
+      } else {
+        // GIR: score = par - 1 (birdie if 1 putt), par (2 putts), par + 1 (3 putts)
+        if (putts === 0) score = par - 2;  // eagle (rare)
+        else if (putts === 1) score = par - 1;
+        else if (putts === 2) score = par;
+        else score = par + 1;
+      }
+
+      score += hole.penalties;
+
+      // Add occasional notes
+      if (Math.random() < 0.15) {
+        const tags = ['wind', 'bad lie', 'good swing', 'nerves', 'lost focus', 'pressure', 'bad bounce'];
+        hole.notes = tags[Math.floor(Math.random() * tags.length)];
+      }
+
+      hole.score = Math.max(1, Math.min(12, score));
+      hole.scoreOverride = true;  // demo data uses pre-computed scores
+      round.holes.push(hole);
+    });
+
+    return round;
+  }
+
+  // Generate 12 rounds over the last ~60 days, with a slight improvement trend
+  const rounds = [];
+  const dayOffsets = [55, 50, 44, 38, 33, 27, 22, 17, 12, 8, 5, 2];
+
+  dayOffsets.forEach((daysAgo, i) => {
+    const course = courses[i % courses.length];
+    // scoreBias: starts higher (worse), trends lower (better) over time
+    const trendBias = -((i / 11) * 0.4) + (Math.random() - 0.5) * 0.6;
+    rounds.push(generateRound(daysAgo, course, trendBias));
+  });
+
+  return rounds;
+}
+
+async function loadDemoData() {
+  const demoRounds = generateDemoData();
+  history = demoRounds;
+  await saveHistory();
+  // Mark as backed up to avoid the nag during demo
+  lastBackup = {
+    date: new Date().toISOString(),
+    roundCount: demoRounds.length
+  };
+  await storageSet(STORAGE_KEY_BACKUP, JSON.stringify(lastBackup));
+  showToast('Loaded 12 demo rounds');
+  renderPlay();
+  renderStats();
+  renderCoach();
+  renderRounds();
+}
+
+async function clearAllData() {
+  showModal({
+    title: 'Clear everything?',
+    text: 'This deletes ALL rounds and any in-progress round. Use this to reset before McKenzie installs the app for real.',
+    confirmText: 'Clear all',
+    onConfirm: async () => {
+      history = [];
+      activeRound = null;
+      lastBackup = null;
+      currentHole = 1;
+      await saveHistory();
+      await storageDelete(STORAGE_KEY_ACTIVE);
+      await storageDelete(STORAGE_KEY_BACKUP);
+      hideModal();
+      showToast('All data cleared');
+      renderPlay();
+      renderStats();
+      renderCoach();
+      renderRounds();
+    }
+  });
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+
+function exportJSON() {
+  const data = JSON.stringify({ rounds: history, exported: new Date().toISOString() }, null, 2);
+  shareOrCopy(data, 'range-export.json', 'application/json');
+  markBackedUp().then(() => {
+    // Re-render whichever view is showing the backup status
+    if (document.querySelector('.tab[data-view="stats"]').classList.contains('active')) renderStats();
+    if (document.querySelector('.tab[data-view="play"]').classList.contains('active')) renderPlay();
+  });
+}
+
+function sendToBobby() {
+  const completed = history.filter(r => r.completed);
+  if (!completed.length) {
+    showToast('No rounds to send yet');
+    return;
+  }
+
+  const stats = aggregateStats(history);
+  const hcp = calculateHandicapIndex(history);
+  const hcpDisplay = hcp !== null ? (hcp < 0 ? '+' + Math.abs(hcp).toFixed(1) : hcp.toFixed(1)) : 'Not yet';
+  const insights = generateInsights(history);
+
+  const summary = [];
+  summary.push('========================================');
+  summary.push('RANGE DATA EXPORT — McKenzie Lane');
+  summary.push('For Bobby · ' + new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }));
+  summary.push('========================================');
+  summary.push('');
+  summary.push('SUMMARY');
+  summary.push('  Rounds played: ' + completed.length);
+  summary.push('  Handicap Index: ' + hcpDisplay);
+  summary.push('  Scoring average: ' + stats.avgScore + ' (' + (stats.avgVsPar >= 0 ? '+' : '') + stats.avgVsPar + ' vs par)');
+  summary.push('  Best round: ' + stats.bestScore);
+  summary.push('  Fairways hit: ' + stats.fairwayPct + '%');
+  summary.push('  GIR: ' + stats.girPct + '%');
+  summary.push('  Putts per round: ' + stats.avgPutts);
+  summary.push('  Scrambling: ' + stats.scramblePct + '%');
+  summary.push('  Penalties per round: ' + stats.avgPenalties);
+  if (stats.driveRoundsLogged > 0) {
+    summary.push('');
+    summary.push('DRIVING DISTANCE GAP TO PEERS');
+    summary.push('  Logged across: ' + stats.driveRoundsLogged + ' rounds');
+    summary.push('  Average gap: ' + (stats.avgDriveDelta > 0 ? '+' : '') + stats.avgDriveDelta + ' yards vs peers');
+    if (stats.avgDriveYds) summary.push('  Average drive (when known): ' + stats.avgDriveYds + ' yards');
+    summary.push('  Recent gaps: ' + stats.driveDeltas.slice(-5).map(d => (d.delta > 0 ? '+' : '') + d.delta).join(', ') + ' yds');
+  }
+  summary.push('');
+
+  if (insights && insights.ready && insights.insights.length) {
+    summary.push('TOP PATTERNS IN HER GAME (from Coach tab)');
+    insights.insights.forEach((ins, i) => {
+      summary.push('  ' + (i+1) + '. [' + ins.area + '] ' + ins.title);
+      summary.push('     ' + ins.finding);
+    });
+    summary.push('');
+  }
+
+  summary.push('LAST 5 ROUNDS');
+  completed.slice(-5).forEach(r => {
+    const d = new Date(r.date).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    const score = totalScore(r);
+    const par = totalPar(r);
+    const diff = score - par;
+    const diffText = diff === 0 ? 'E' : diff > 0 ? '+'+diff : ''+diff;
+    summary.push('  ' + d + ' · ' + (r.course || 'Unnamed') + ' · ' + score + ' (' + diffText + ')');
+  });
+  summary.push('');
+
+  const messageField = document.getElementById('send-to-bobby-msg');
+  const userMessage = messageField ? messageField.value.trim() : '';
+  if (userMessage) {
+    summary.push('MESSAGE FROM McKENZIE');
+    summary.push('  ' + userMessage);
+    summary.push('');
+  }
+
+  summary.push('========================================');
+  summary.push('FULL JSON DATA BELOW — paste to Claude');
+  summary.push('========================================');
+  summary.push('');
+  summary.push(JSON.stringify({
+    player: 'McKenzie',
+    sentAt: new Date().toISOString(),
+    handicapIndex: hcp,
+    summaryStats: stats,
+    rounds: history,
+    message: userMessage || null
+  }, null, 2));
+
+  const bundle = summary.join('\n');
+  const filename = 'mckenzie-for-dad-' + new Date().toISOString().split('T')[0] + '.txt';
+  shareOrCopy(bundle, filename, 'text/plain');
+
+  // Clear the message field after sending
+  if (messageField) messageField.value = '';
+
+  markBackedUp().then(() => {
+    if (document.querySelector('.tab[data-view="stats"]').classList.contains('active')) renderStats();
+  });
+}
+
+function exportCSV() {
+  const headers = ['date','course','tees','courseRating','slope','differential','hole','par','score','scoreOverride','tee','teeBunker','secondShot','secondBunker','approach','approachBunker','recoveries','putts','firstPuttDistance','puttDetails','puttMisses','penalties','notes'];
+  const rows = [headers.join(',')];
+  history.filter(r => r.completed).forEach(r => {
+    const dateStr = new Date(r.date).toISOString().split('T')[0];
+    const diff = scoreDifferential(r).toFixed(1);
+    r.holes.forEach(h => {
+      const recoveriesStr = (h.recoveries || []).map(rc => `${rc.bunker ? 'bunker' : 'chip'}:${rc.result || ''}`).join('|');
+      rows.push([
+        dateStr,
+        csvEsc(r.course || ''),
+        csvEsc(r.tees || ''),
+        r.courseRating || 72.0,
+        r.slope || 113,
+        diff,
+        h.hole, h.par, holeScore(h),
+        h.scoreOverride ? 'yes' : '',
+        h.tee || '',
+        h.teeBunker ? 'yes' : '',
+        h.secondShot || '',
+        h.secondBunker ? 'yes' : '',
+        h.approach || '',
+        h.approachBunker ? 'yes' : '',
+        csvEsc(recoveriesStr),
+        h.putts !== undefined && h.putts !== null ? h.putts : '',
+        h.firstPuttDistance || '',
+        csvEsc((h.puttDetails || []).filter(d => d).map(d => d.type).join('|')),
+        csvEsc((h.puttMisses || []).join('|')),
+        h.penalties || 0,
+        csvEsc(h.notes || '')
+      ].join(','));
+    });
+  });
+  shareOrCopy(rows.join('\n'), 'range-export.csv', 'text/csv');
+  markBackedUp().then(() => {
+    if (document.querySelector('.tab[data-view="stats"]').classList.contains('active')) renderStats();
+    if (document.querySelector('.tab[data-view="play"]').classList.contains('active')) renderPlay();
+  });
+}
+
+function triggerImport() {
+  // Build hidden file input
+  let inp = document.getElementById('import-file-input');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'application/json,.json';
+    inp.id = 'import-file-input';
+    inp.style.display = 'none';
+    inp.addEventListener('change', handleImport);
+    document.body.appendChild(inp);
+  }
+  inp.value = '';
+  inp.click();
+}
+
+async function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data.rounds || !Array.isArray(data.rounds)) {
+      showToast('That doesn\'t look like a Range backup');
+      return;
+    }
+    const incoming = data.rounds.filter(r => r && r.id && r.holes);
+    if (!incoming.length) {
+      showToast('No valid rounds found');
+      return;
+    }
+    showModal({
+      title: 'Import rounds?',
+      text: `Found ${incoming.length} round${incoming.length === 1 ? '' : 's'} in this backup. Choose how to handle them:`,
+      confirmText: 'Merge',
+      onConfirm: async () => {
+        // Merge: keep current + add any new ones (by id)
+        const existingIds = new Set(history.map(r => r.id));
+        const newOnes = incoming.filter(r => !existingIds.has(r.id));
+        history = [...history, ...newOnes].sort((a, b) => new Date(a.date) - new Date(b.date));
+        await saveHistory();
+        hideModal();
+        showToast(`Added ${newOnes.length} new round${newOnes.length === 1 ? '' : 's'}`);
+        renderStats();
+        renderRounds();
+        renderCoach();
+        renderPlay();
+      }
+    });
+    // Add a "Replace all" option to the modal
+    setTimeout(() => {
+      const actions = document.getElementById('modal-actions');
+      const replaceBtn = document.createElement('button');
+      replaceBtn.className = 'modal-btn danger';
+      replaceBtn.textContent = 'Replace all';
+      replaceBtn.onclick = async () => {
+        if (!confirm('This will delete all current rounds and replace with the backup. Continue?')) return;
+        history = incoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+        await saveHistory();
+        hideModal();
+        showToast(`Replaced with ${incoming.length} round${incoming.length === 1 ? '' : 's'}`);
+        renderStats();
+        renderRounds();
+        renderCoach();
+        renderPlay();
+      };
+      actions.insertBefore(replaceBtn, actions.firstChild);
+    }, 50);
+  } catch(err) {
+    showToast('Could not read that file');
+    console.error(err);
+  }
+}
+
+function csvEsc(s) {
+  s = String(s);
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function shareOrCopy(data, filename, mime) {
+  if (navigator.share) {
+    try {
+      const blob = new Blob([data], { type: mime });
+      const file = new File([blob], filename, { type: mime });
+      navigator.share({ files: [file], title: 'Range export' }).catch(() => copyText(data));
+      return;
+    } catch(e) {}
+  }
+  copyText(data);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchView(tab.dataset.view));
+});
+
+(async function init() {
+  await loadState();
+  await loadCourseNotes();
+  if (activeRound) {
+    for (let i = 0; i < activeRound.holes.length; i++) {
+      if (!holeIsLogged(activeRound.holes[i])) {
+        currentHole = i + 1;
+        break;
+      }
+    }
+  }
+  renderPlay();
+})();
+</script>
+
+</body>
+</html>
